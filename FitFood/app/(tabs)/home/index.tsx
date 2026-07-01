@@ -28,7 +28,7 @@ export default function HomeScreen() {
       icon: '🍽',
       color: '#FF6B35',
       bgColor: '#FFF0E8',
-      route: '/(tabs)/scan',
+      route: '/(tabs)/SLfood',
     },
     {
       id: 2,
