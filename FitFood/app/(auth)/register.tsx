@@ -14,25 +14,76 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { colors } from '../../constants/Colors';
+import { supabase } from '../../src/lib/supabase';
+import { useAuth } from '../../src/context/AuthContext';
 
 export default function RegisterScreen() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const { signInWithGoogle } = useAuth();
 
-  const handleRegister = () => {
+  // Email/Password Sign Up
+  const handleRegister = async () => {
     if (!name || !email || !password) {
       Alert.alert('Error', 'Please fill all fields');
       return;
     }
+
+    if (password.length < 6) {
+      Alert.alert('Error', 'Password must be at least 6 characters');
+      return;
+    }
+
     setLoading(true);
-    setTimeout(() => {
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: email.trim(),
+        password: password,
+        options: {
+          data: {
+            name: name.trim(),
+          },
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.user) {
+        Alert.alert(
+          '🎉 Success!',
+          'Account created successfully! Please check your email for verification.',
+          [
+            {
+              text: 'OK',
+              onPress: () => router.push('/(auth)/login'),
+            },
+          ]
+        );
+      }
+    } catch (error: any) {
+      Alert.alert('Registration Failed', error.message || 'Something went wrong');
+    } finally {
       setLoading(false);
-      Alert.alert('🎉 Success', 'Account created! Please login.');
-      router.push('/(auth)/login');
-    }, 1500);
+    }
+  };
+
+  // Google Sign-In
+  const handleGoogleSignIn = async () => {
+    try {
+      setGoogleLoading(true);
+      const success = await signInWithGoogle();
+      if (success) {
+        router.replace('/(tabs)/home');
+      }
+    } catch (error: any) {
+      Alert.alert('Google Sign-In Failed', error.message || 'Something went wrong');
+    } finally {
+      setGoogleLoading(false);
+    }
   };
 
   return (
@@ -56,10 +107,12 @@ export default function RegisterScreen() {
           <View style={styles.shape3} />
 
           <View style={styles.headerContent}>
-            
             <Text style={styles.welcomeText}>Join FitFood</Text>
             <Text style={styles.subText}>Scan • Eat • Get Fit</Text>
             <View style={styles.badgeContainer}>
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>✨ Free forever</Text>
+              </View>
             </View>
           </View>
         </View>
@@ -72,11 +125,11 @@ export default function RegisterScreen() {
 
             {/* Name Input */}
             <View style={styles.inputWrapper}>
+              <Text style={styles.inputLabel}>Full Name</Text>
               <View style={styles.inputContainer}>
-                <Text style={styles.inputIcon}></Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="Full Name"
+                  placeholder="Enter your full name"
                   placeholderTextColor="#999"
                   value={name}
                   onChangeText={setName}
@@ -86,11 +139,11 @@ export default function RegisterScreen() {
 
             {/* Email Input */}
             <View style={styles.inputWrapper}>
+              <Text style={styles.inputLabel}>Email Address</Text>
               <View style={styles.inputContainer}>
-                <Text style={styles.inputIcon}></Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="Email Address"
+                  placeholder="your@email.com"
                   placeholderTextColor="#999"
                   value={email}
                   onChangeText={setEmail}
@@ -102,21 +155,23 @@ export default function RegisterScreen() {
 
             {/* Password Input */}
             <View style={styles.inputWrapper}>
+              <Text style={styles.inputLabel}>Password</Text>
               <View style={styles.inputContainer}>
-                <Text style={styles.inputIcon}></Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="Password"
+                  placeholder="Create a strong password"
                   placeholderTextColor="#999"
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry={!showPassword}
                 />
                 <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                  <Text style={styles.eyeIcon}>{showPassword ? '🟥' : '✅'}</Text>
+                  <Text style={styles.eyeIcon}>{showPassword ? '🙈' : '👁️'}</Text>
                 </TouchableOpacity>
               </View>
             </View>
+
+            
 
             {/* Register Button */}
             <TouchableOpacity
@@ -128,7 +183,7 @@ export default function RegisterScreen() {
               {loading ? (
                 <ActivityIndicator color="#FFFFFF" size="small" />
               ) : (
-                <Text style={styles.registerButtonText}>Sign Up</Text>
+                <Text style={styles.registerButtonText}>Create Account</Text>
               )}
             </TouchableOpacity>
 
@@ -141,18 +196,31 @@ export default function RegisterScreen() {
 
             {/* Social Sign Up */}
             <View style={styles.socialContainer}>
-              <TouchableOpacity style={styles.socialButton}>
-                <Text style={styles.socialText}>Google</Text>
+              <TouchableOpacity
+                style={[styles.socialButton, googleLoading && styles.socialButtonDisabled]}
+                onPress={handleGoogleSignIn}
+                disabled={googleLoading}
+                activeOpacity={0.8}
+              >
+                {googleLoading ? (
+                  <ActivityIndicator color="#333333" size="small" />
+                ) : (
+                  <>
+                    
+                    <Text style={styles.socialText}>Google</Text>
+                  </>
+                )}
               </TouchableOpacity>
-              <TouchableOpacity style={styles.socialButton}>
-                <Text style={styles.socialText}>Apple</Text>
+              <TouchableOpacity style={styles.socialButton} activeOpacity={0.8}>
+                
+                <Text style={styles.socialText}>facbook</Text>
               </TouchableOpacity>
             </View>
 
             {/* Login Link */}
             <View style={styles.loginContainer}>
               <Text style={styles.loginText}>Already have an account?</Text>
-              <TouchableOpacity onPress={() => router.push('/(auth)/login')}>
+              <TouchableOpacity onPress={() => router.push('/(auth)/login')} activeOpacity={0.7}>
                 <Text style={styles.loginLink}> Sign In</Text>
               </TouchableOpacity>
             </View>
@@ -174,7 +242,7 @@ const styles = StyleSheet.create({
 
   // Top Section - Gradient Header
   topSection: {
-    height: 280,
+    height: 260,
     backgroundColor: colors.primary,
     borderBottomLeftRadius: 40,
     borderBottomRightRadius: 40,
@@ -241,22 +309,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 30,
   },
-  iconWrapper: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.2)',
-  },
-  iconText: {
-    fontSize: 40,
-  },
   welcomeText: {
-    fontSize: 45,
+    fontSize: 40,
     fontWeight: '700',
     color: '#FFFFFF',
     letterSpacing: 1,
@@ -300,10 +354,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.06,
     shadowRadius: 20,
     elevation: 6,
-
   },
   formTitle: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: '700',
     color: colors.text,
     textAlign: 'center',
@@ -319,6 +372,13 @@ const styles = StyleSheet.create({
   inputWrapper: {
     marginBottom: 14,
   },
+  inputLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 6,
+    letterSpacing: 0.5,
+  },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -328,11 +388,11 @@ const styles = StyleSheet.create({
     borderColor: '#E8ECF0',
     paddingHorizontal: 16,
     height: 54,
-    marginTop: 8,
   },
   inputIcon: {
     fontSize: 18,
     marginRight: 12,
+    opacity: 0.5,
   },
   input: {
     flex: 1,
@@ -341,7 +401,7 @@ const styles = StyleSheet.create({
   },
   eyeIcon: {
     fontSize: 18,
-    opacity: 1,
+    opacity: 0.5,
     padding: 4,
   },
 
@@ -419,6 +479,9 @@ const styles = StyleSheet.create({
     borderColor: '#E8ECF0',
     flex: 1,
     justifyContent: 'center',
+  },
+  socialButtonDisabled: {
+    opacity: 0.7,
   },
   socialIcon: {
     fontSize: 18,

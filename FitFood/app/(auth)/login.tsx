@@ -13,23 +13,56 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { colors } from '../../constants/Colors';
+import { supabase } from '../../src/lib/supabase';
+import { useAuth } from '../../src/context/AuthContext';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const { signInWithGoogle } = useAuth();
 
-  const handleLogin = () => {
+  // Email/Password Login
+  const handleEmailLogin = async () => {
     if (!email || !password) {
       Alert.alert('Error', 'Please fill all fields');
       return;
     }
+
     setLoading(true);
-    setTimeout(() => {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password: password,
+      });
+
+      if (error) throw error;
+
+      if (data?.session) {
+        router.replace('/(tabs)/home');
+      }
+    } catch (error: any) {
+      Alert.alert('Login Failed', error.message || 'Invalid email or password');
+    } finally {
       setLoading(false);
-      router.replace('/(tabs)/home');
-    }, 1500);
+    }
+  };
+
+  // Google Sign-In
+  const handleGoogleSignIn = async () => {
+    try {
+      setGoogleLoading(true);
+      const success = await signInWithGoogle();
+      if (success) {
+        router.replace('/(tabs)/home');
+      }
+    } catch (error: any) {
+      Alert.alert('Google Sign-In Failed', error.message || 'Something went wrong');
+    } finally {
+      setGoogleLoading(false);
+    }
   };
 
   return (
@@ -49,7 +82,7 @@ export default function LoginScreen() {
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.logoContainer}>
-           
+            
           </View>
           <Text style={styles.title}>Welcome Back</Text>
           <Text style={styles.subtitle}>Sign in to continue your health journey</Text>
@@ -61,7 +94,6 @@ export default function LoginScreen() {
           <View style={styles.inputWrapper}>
             <Text style={styles.inputLabel}>Email Address</Text>
             <View style={styles.inputContainer}>
-              <Text style={styles.inputIcon}>✉</Text>
               <TextInput
                 style={styles.input}
                 placeholder="your@email.com"
@@ -70,6 +102,7 @@ export default function LoginScreen() {
                 onChangeText={setEmail}
                 keyboardType="email-address"
                 autoCapitalize="none"
+                autoCorrect={false}
               />
             </View>
           </View>
@@ -78,7 +111,6 @@ export default function LoginScreen() {
           <View style={styles.inputWrapper}>
             <Text style={styles.inputLabel}>Password</Text>
             <View style={styles.inputContainer}>
-              <Text style={styles.inputIcon}>🔒</Text>
               <TextInput
                 style={styles.input}
                 placeholder="Enter your password"
@@ -86,22 +118,27 @@ export default function LoginScreen() {
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
+                autoCorrect={false}
               />
-              <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeButton}>
+              <TouchableOpacity 
+                onPress={() => setShowPassword(!showPassword)} 
+                style={styles.eyeButton}
+                activeOpacity={0.7}
+              >
                 <Text style={styles.eyeIcon}>{showPassword ? '👁' : '👁‍🗨'}</Text>
               </TouchableOpacity>
             </View>
           </View>
 
           {/* Forgot Password */}
-          <TouchableOpacity style={styles.forgotButton}>
+          <TouchableOpacity style={styles.forgotButton} activeOpacity={0.7}>
             <Text style={styles.forgotText}>Forgot Password?</Text>
           </TouchableOpacity>
 
           {/* Login Button */}
           <TouchableOpacity
             style={[styles.loginButton, loading && styles.loginButtonDisabled]}
-            onPress={handleLogin}
+            onPress={handleEmailLogin}
             disabled={loading}
             activeOpacity={0.8}
           >
@@ -112,15 +149,38 @@ export default function LoginScreen() {
             )}
           </TouchableOpacity>
 
+          {/* Divider */}
+          <View style={styles.dividerContainer}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>or continue with</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          {/* Google Sign-In Button */}
+          <TouchableOpacity
+            style={[styles.googleButton, googleLoading && styles.googleButtonDisabled]}
+            onPress={handleGoogleSignIn}
+            disabled={googleLoading}
+            activeOpacity={0.8}
+          >
+            {googleLoading ? (
+              <ActivityIndicator color="#333333" size="small" />
+            ) : (
+              <>
+                <Text style={styles.googleButtonText}>Continue with Google</Text>
+              </>
+            )}
+          </TouchableOpacity>
+
           {/* Register Link */}
           <View style={styles.registerContainer}>
             <Text style={styles.registerText}>Don't have an account?</Text>
-            <TouchableOpacity onPress={() => router.push('/(auth)/register')}>
+            <TouchableOpacity onPress={() => router.push('/(auth)/register')} activeOpacity={0.7}>
               <Text style={styles.registerLink}> Create Account</Text>
             </TouchableOpacity>
           </View>
 
-          <Text style={styles.version}>v1.0.0</Text>
+          
         </View>
       </View>
     </KeyboardAvoidingView>
@@ -328,6 +388,48 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     letterSpacing: 1,
+  },
+
+  // Divider
+  dividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 18,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#E8ECF0',
+  },
+  dividerText: {
+    paddingHorizontal: 12,
+    fontSize: 12,
+    color: colors.textLight,
+    letterSpacing: 0.5,
+  },
+
+  // Google Button
+  googleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#DDDDDD',
+    gap: 10,
+  },
+  googleButtonDisabled: {
+    opacity: 0.7,
+  },
+  googleIcon: {
+    fontSize: 20,
+  },
+  googleButtonText: {
+    color: '#333333',
+    fontSize: 16,
+    fontWeight: '600',
   },
 
   registerContainer: {
