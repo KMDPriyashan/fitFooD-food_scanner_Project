@@ -116,7 +116,7 @@ const SRI_LANKAN_FOODS = [
   },
   {
     id: '7',
-    name: 'Undu Walalu',
+    name: 'Undu Walalu (SL)',
     nameSi: 'උණ්ඩු වළලු',
     category: 'Traditional Sweets',
     calories: 200,
