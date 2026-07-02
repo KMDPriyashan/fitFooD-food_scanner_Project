@@ -15,7 +15,7 @@ const TABS = [
   { name: 'Scan', icon: '📸', route: '/(tabs)/scan' },
   { name: 'History', icon: '📋', route: '/(tabs)/history' },
   { name: 'Foods', icon: '🍽', route: '/(tabs)/SLfood' },
-  { name: 'Profile', icon: '👤', route: '/(tabs)/profile' },
+  { name: 'User', icon: '👤', route: '/(tabs)/profile' },
 ];
 
 export default function BottomNav() {
