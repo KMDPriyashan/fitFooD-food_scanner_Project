@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { router, usePathname } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
-import { colors } from '../../constants/Colors';
+import { colors } from '../constants/Colors';
 
 const { width } = Dimensions.get('window');
 
