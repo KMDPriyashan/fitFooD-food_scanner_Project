@@ -1,7 +1,7 @@
 ﻿import { Tabs } from 'expo-router';
 import { View } from 'react-native';
 import React from 'react';
-import BottomNav from '../../components/ui/BottomNav';
+import BottomNav from '../../components/BottomNav';
 
 export default function TabLayout() {
   return (
