@@ -214,8 +214,6 @@ export default function SLFoodScreen() {
           onClose={() => setModalVisible(false)}
         />
 
-        {/* Bottom Navigation */}
-        <BottomNav />
       </View>
     </SafeAreaView>
   );
