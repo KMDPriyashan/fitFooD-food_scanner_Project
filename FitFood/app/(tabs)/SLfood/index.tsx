@@ -11,7 +11,6 @@ import {
   FlatList,
   Dimensions,
   ActivityIndicator,
-  Platform,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -68,7 +67,6 @@ export default function SLFoodScreen() {
     setModalVisible(true);
   };
 
-  // Get placeholder image
   const getImageUrl = (item: Food) => {
     if (item.image_url && item.image_url.startsWith('http')) {
       return item.image_url;
@@ -81,7 +79,6 @@ export default function SLFoodScreen() {
     return placeholders[selectedMeal] || 'https://via.placeholder.com/400x300/FF6B35/FFFFFF?text=Food';
   };
 
-  // Get difficulty color
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty?.toLowerCase()) {
       case 'easy': return '#4CAF50';
@@ -91,7 +88,6 @@ export default function SLFoodScreen() {
     }
   };
 
-  // Get difficulty icon
   const getDifficultyIcon = (difficulty: string) => {
     switch (difficulty?.toLowerCase()) {
       case 'easy': return '😊';
@@ -108,17 +104,14 @@ export default function SLFoodScreen() {
       activeOpacity={0.85}
     >
       <View style={styles.foodCard}>
-        {/* Image Container with Gradient Overlay */}
+        {/* Image Container */}
         <View style={styles.imageContainer}>
-          <Image 
-            source={{ uri: getImageUrl(item) }} 
-            style={styles.foodImage}
-          />
+          <Image source={{ uri: getImageUrl(item) }} style={styles.foodImage} />
           <LinearGradient
-            colors={['transparent', 'rgba(0,0,0,0.4)']}
+            colors={['transparent', 'rgba(0,0,0,0.5)']}
             style={styles.imageGradient}
           />
-          
+
           {/* Difficulty Badge */}
           <View style={[styles.difficultyBadge, { backgroundColor: getDifficultyColor(item.difficulty || 'Easy') }]}>
             <Text style={styles.difficultyBadgeText}>
@@ -126,7 +119,7 @@ export default function SLFoodScreen() {
             </Text>
           </View>
 
-          {/* Dietary Tags - Top Right */}
+          {/* Dietary Tags */}
           <View style={styles.dietaryTagsContainer}>
             {item.is_vegetarian && (
               <View style={[styles.dietaryTagSmall, styles.vegetarianTag]}>
@@ -145,7 +138,7 @@ export default function SLFoodScreen() {
             )}
           </View>
 
-          {/* Cooking Time Badge - Bottom Right */}
+          {/* Time Badge */}
           <View style={styles.timeBadge}>
             <Ionicons name="time-outline" size={14} color="#FFFFFF" />
             <Text style={styles.timeBadgeText}>{item.cooking_time || 0}m</Text>
@@ -171,8 +164,6 @@ export default function SLFoodScreen() {
             {item.short_description || item.description?.substring(0, 60) + '...' || 'Delicious Sri Lankan food'}
           </Text>
 
-
-          {/* Footer */}
           <View style={styles.footerRow}>
             <View style={styles.servingsContainer}>
               <Ionicons name="people-outline" size={14} color={colors.textLight} />
@@ -201,19 +192,29 @@ export default function SLFoodScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="light-content" backgroundColor={colors.primary} />
-      
+
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerContent}>
-            <TouchableOpacity 
-              style={styles.backBtn}
-              onPress={() => router.back()}
-            >
+            <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
               <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Sri Lankan Foods</Text>
-            <View style={styles.headerPlaceholder} />
+            <TouchableOpacity 
+              style={styles.addFoodBtn}
+              onPress={() => router.push('/(tabs)/SLfood/add-food')}
+              activeOpacity={0.8}
+            >
+              <LinearGradient
+                colors={['#ffffff', '#ffffff']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.addFoodGradient}
+              >
+                <Ionicons name="add" size={24} color="#ec1818" />
+              </LinearGradient>
+            </TouchableOpacity>
           </View>
           <Text style={styles.headerSubtitle}>🇱🇰 Discover traditional Sri Lankan cuisine</Text>
         </View>
@@ -319,9 +320,25 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '700',
     color: '#FFFFFF',
+    flex: 1,
+    textAlign: 'center',
   },
-  headerPlaceholder: {
-    width: 40,
+  addFoodBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    overflow: 'hidden',
+    shadowColor: '#E53935',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  addFoodGradient: {
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headerSubtitle: {
     fontSize: 13,
@@ -498,13 +515,12 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   foodName: {
-    fontSize: 22,
+    fontSize: 17,
     fontWeight: '700',
     color: colors.text,
-    marginBottom: 15
   },
   foodNameSi: {
-    fontSize: 11,
+    fontSize: 13,
     color: colors.textLight,
     marginTop: 2,
   },
@@ -530,34 +546,6 @@ const styles = StyleSheet.create({
     color: colors.textLight,
     marginTop: 6,
     lineHeight: 18,
-  },
-  nutritionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 12,
-    backgroundColor: '#F8F9FA',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-  },
-  nutritionItem: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  nutritionValue: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: colors.text,
-  },
-  nutritionLabel: {
-    fontSize: 10,
-    color: colors.textLight,
-    marginTop: 1,
-  },
-  nutritionDivider: {
-    width: 1,
-    height: 24,
-    backgroundColor: '#E8ECF0',
   },
   footerRow: {
     flexDirection: 'row',
