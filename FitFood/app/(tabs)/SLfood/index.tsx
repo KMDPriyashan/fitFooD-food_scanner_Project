@@ -9,16 +9,16 @@ import {
   StatusBar,
   TextInput,
   FlatList,
-  Modal,
   Dimensions,
   ActivityIndicator,
 } from 'react-native';
 import { router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { colors } from '../../../constants/Colors';
 import { Food, MealType } from './types';
 import { foodService } from '../../services/foodService';
 import FoodDetailModal from './components/FoodDetailModal';
-import BottomNav from '../../../components/BottomNav';
 
 const { width, height } = Dimensions.get('window');
 
@@ -44,7 +44,7 @@ export default function SLFoodScreen() {
     setLoading(true);
     try {
       const data = await foodService.getFoodsByCategory(selectedMeal);
-      setFoods(data);
+      setFoods(data || []);
     } catch (error) {
       console.error('Error fetching foods:', error);
     } finally {
@@ -56,7 +56,7 @@ export default function SLFoodScreen() {
     if (!searchQuery.trim()) return true;
     const query = searchQuery.toLowerCase();
     return (
-      food.name.toLowerCase().includes(query) ||
+      food.name?.toLowerCase().includes(query) ||
       (food.name_si && food.name_si.toLowerCase().includes(query)) ||
       (food.short_description && food.short_description.toLowerCase().includes(query))
     );
@@ -67,54 +67,113 @@ export default function SLFoodScreen() {
     setModalVisible(true);
   };
 
+  const getImageUrl = (item: Food) => {
+    if (item.image_url && item.image_url.startsWith('http')) {
+      return item.image_url;
+    }
+    const placeholders = {
+      breakfast: 'https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?w=400',
+      lunch: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400',
+      dinner: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=400',
+    };
+    return placeholders[selectedMeal] || 'https://via.placeholder.com/400x300/FF6B35/FFFFFF?text=Food';
+  };
+
+  const getDifficultyColor = (difficulty: string) => {
+    switch (difficulty?.toLowerCase()) {
+      case 'easy': return '#4CAF50';
+      case 'medium': return '#FF9800';
+      case 'hard': return '#F44336';
+      default: return '#4CAF50';
+    }
+  };
+
+  const getDifficultyIcon = (difficulty: string) => {
+    switch (difficulty?.toLowerCase()) {
+      case 'easy': return '😊';
+      case 'medium': return '🤔';
+      case 'hard': return '😅';
+      default: return '😊';
+    }
+  };
+
   const renderFoodItem = ({ item }: { item: Food }) => (
     <TouchableOpacity
-      style={styles.foodCard}
+      style={styles.foodCardWrapper}
       onPress={() => handleFoodPress(item)}
       activeOpacity={0.85}
     >
-      <Image source={{ uri: item.image_url }} style={styles.foodImage} />
-      <View style={styles.foodOverlay}>
-        <View style={styles.foodBadge}>
-          <Text style={styles.foodBadgeText}>{item.difficulty || 'Easy'}</Text>
+      <View style={styles.foodCard}>
+        {/* Image Container */}
+        <View style={styles.imageContainer}>
+          <Image source={{ uri: getImageUrl(item) }} style={styles.foodImage} />
+          <LinearGradient
+            colors={['transparent', 'rgba(0,0,0,0.5)']}
+            style={styles.imageGradient}
+          />
+
+          {/* Difficulty Badge */}
+          <View style={[styles.difficultyBadge, { backgroundColor: getDifficultyColor(item.difficulty || 'Easy') }]}>
+            <Text style={styles.difficultyBadgeText}>
+              {getDifficultyIcon(item.difficulty || 'Easy')} {item.difficulty || 'Easy'}
+            </Text>
+          </View>
+
+          {/* Dietary Tags */}
+          <View style={styles.dietaryTagsContainer}>
+            {item.is_vegetarian && (
+              <View style={[styles.dietaryTagSmall, styles.vegetarianTag]}>
+                <Text style={styles.dietaryTagSmallText}>🌱</Text>
+              </View>
+            )}
+            {item.is_vegan && (
+              <View style={[styles.dietaryTagSmall, styles.veganTag]}>
+                <Text style={styles.dietaryTagSmallText}>🌿</Text>
+              </View>
+            )}
+            {item.is_gluten_free && (
+              <View style={[styles.dietaryTagSmall, styles.glutenFreeTag]}>
+                <Text style={styles.dietaryTagSmallText}>🚫</Text>
+              </View>
+            )}
+          </View>
+
+          {/* Time Badge */}
+          <View style={styles.timeBadge}>
+            <Ionicons name="time-outline" size={14} color="#FFFFFF" />
+            <Text style={styles.timeBadgeText}>{item.cooking_time || 0}m</Text>
+          </View>
         </View>
-      </View>
-      <View style={styles.foodInfo}>
-        <Text style={styles.foodName}>{item.name}</Text>
-        {item.name_si && <Text style={styles.foodNameSi}>{item.name_si}</Text>}
-        <Text style={styles.foodDesc} numberOfLines={2}>
-          {item.short_description || item.description?.substring(0, 60) + '...' || ''}
-        </Text>
-        <View style={styles.foodStats}>
-          <View style={styles.foodStat}>
-            <Text style={styles.foodStatValue}>{item.nutrition?.calories || 0}</Text>
-            <Text style={styles.foodStatLabel}>Cal</Text>
-          </View>
-          <View style={styles.foodStat}>
-            <Text style={styles.foodStatValue}>{item.nutrition?.protein || 0}g</Text>
-            <Text style={styles.foodStatLabel}>Protein</Text>
-          </View>
-          <View style={styles.foodStat}>
-            <Text style={styles.foodStatValue}>{item.cooking_time || 0}m</Text>
-            <Text style={styles.foodStatLabel}>Time</Text>
-          </View>
-        </View>
-        <View style={styles.dietaryTags}>
-          {item.is_vegetarian && (
-            <View style={[styles.dietaryTag, styles.vegetarianTag]}>
-              <Text style={styles.dietaryTagText}>🌱</Text>
+
+        {/* Content */}
+        <View style={styles.contentContainer}>
+          <View style={styles.titleRow}>
+            <View style={styles.titleContainer}>
+              <Text style={styles.foodName} numberOfLines={1}>{item.name}</Text>
+              {item.name_si && (
+                <Text style={styles.foodNameSi} numberOfLines={1}>{item.name_si}</Text>
+              )}
             </View>
-          )}
-          {item.is_vegan && (
-            <View style={[styles.dietaryTag, styles.veganTag]}>
-              <Text style={styles.dietaryTagText}>🌿</Text>
+            <View style={styles.caloriesBadge}>
+              <Text style={styles.caloriesText}>{item.nutrition?.calories || 0}</Text>
+              <Text style={styles.caloriesLabel}>cal</Text>
             </View>
-          )}
-          {item.is_gluten_free && (
-            <View style={[styles.dietaryTag, styles.glutenFreeTag]}>
-              <Text style={styles.dietaryTagText}>🚫</Text>
+          </View>
+
+          <Text style={styles.foodDesc} numberOfLines={2}>
+            {item.short_description || item.description?.substring(0, 60) + '...' || 'Delicious Sri Lankan food'}
+          </Text>
+
+          <View style={styles.footerRow}>
+            <View style={styles.servingsContainer}>
+              <Ionicons name="people-outline" size={14} color={colors.textLight} />
+              <Text style={styles.servingsText}>{item.servings || 2} servings</Text>
             </View>
-          )}
+            <View style={styles.viewDetailsBtn}>
+              <Text style={styles.viewDetailsText}>View Details</Text>
+              <Ionicons name="arrow-forward" size={14} color={colors.primary} />
+            </View>
+          </View>
         </View>
       </View>
     </TouchableOpacity>
@@ -133,19 +192,29 @@ export default function SLFoodScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="light-content" backgroundColor={colors.primary} />
-      
+
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerContent}>
-            <TouchableOpacity 
-              style={styles.backBtn}
-              onPress={() => router.back()}
-            >
-              <Text style={styles.backBtnText}>←</Text>
+            <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+              <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Sri Lankan Foods</Text>
-            <View style={styles.headerPlaceholder} />
+            <TouchableOpacity 
+              style={styles.addFoodBtn}
+              onPress={() => router.push('/(tabs)/SLfood/add-food')}
+              activeOpacity={0.8}
+            >
+              <LinearGradient
+                colors={['#ffffff', '#ffffff']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.addFoodGradient}
+              >
+                <Ionicons name="add" size={24} color="#ec1818" />
+              </LinearGradient>
+            </TouchableOpacity>
           </View>
           <Text style={styles.headerSubtitle}>🇱🇰 Discover traditional Sri Lankan cuisine</Text>
         </View>
@@ -174,7 +243,7 @@ export default function SLFoodScreen() {
 
         {/* Search Bar */}
         <View style={styles.searchContainer}>
-          <Text style={styles.searchIcon}>🔍</Text>
+          <Ionicons name="search" size={20} color={colors.textLight} style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
             placeholder="Search foods..."
@@ -184,7 +253,7 @@ export default function SLFoodScreen() {
           />
           {searchQuery !== '' && (
             <TouchableOpacity onPress={() => setSearchQuery('')}>
-              <Text style={styles.clearIcon}>✕</Text>
+              <Ionicons name="close-circle" size={20} color={colors.textLight} />
             </TouchableOpacity>
           )}
         </View>
@@ -202,7 +271,6 @@ export default function SLFoodScreen() {
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.foodList}
             showsVerticalScrollIndicator={false}
-            numColumns={2}
             ListEmptyComponent={renderEmptyState}
           />
         )}
@@ -213,7 +281,6 @@ export default function SLFoodScreen() {
           food={selectedFood}
           onClose={() => setModalVisible(false)}
         />
-
       </View>
     </SafeAreaView>
   );
@@ -226,12 +293,12 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    backgroundColor: '#F0F2F5',
+    backgroundColor: '#F5F7FA',
   },
   header: {
     backgroundColor: colors.primary,
     paddingHorizontal: 20,
-    paddingTop: 12,
+    paddingTop: 53,
     paddingBottom: 16,
     borderBottomLeftRadius: 28,
     borderBottomRightRadius: 28,
@@ -249,23 +316,35 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  backBtnText: {
-    fontSize: 20,
-    color: '#FFFFFF',
-    fontWeight: '600',
-  },
   headerTitle: {
     fontSize: 20,
     fontWeight: '700',
     color: '#FFFFFF',
+    flex: 1,
+    textAlign: 'center',
   },
-  headerPlaceholder: {
-    width: 40,
+  addFoodBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    overflow: 'hidden',
+    shadowColor: '#E53935',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  addFoodGradient: {
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headerSubtitle: {
     fontSize: 13,
     color: 'rgba(255,255,255,0.75)',
     marginTop: 4,
+    textAlign: 'center',
   },
   mealSelector: {
     flexDirection: 'row',
@@ -279,7 +358,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     paddingVertical: 10,
-    paddingHorizontal: 16,
+    paddingHorizontal: 18,
     borderRadius: 14,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -310,7 +389,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     marginHorizontal: 16,
-    paddingHorizontal: 14,
+    paddingHorizontal: 16,
     borderRadius: 14,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -318,121 +397,180 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 2,
     marginBottom: 4,
+    height: 48,
   },
   searchIcon: {
-    fontSize: 16,
     marginRight: 10,
-    opacity: 0.5,
   },
   searchInput: {
     flex: 1,
-    paddingVertical: 14,
     fontSize: 15,
     color: colors.text,
-  },
-  clearIcon: {
-    fontSize: 16,
-    color: colors.textLight,
-    padding: 4,
+    paddingVertical: 12,
   },
   foodList: {
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
     paddingBottom: 20,
-    paddingTop: 4,
+    paddingTop: 8,
+  },
+  foodCardWrapper: {
+    marginBottom: 16,
   },
   foodCard: {
-    width: (width - 40) / 2,
     backgroundColor: '#FFFFFF',
     borderRadius: 18,
-    marginBottom: 14,
-    marginHorizontal: 4,
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.06,
-    shadowRadius: 12,
+    shadowRadius: 16,
     elevation: 4,
+  },
+  imageContainer: {
+    width: '100%',
+    height: 180,
+    position: 'relative',
   },
   foodImage: {
     width: '100%',
-    height: 130,
+    height: '100%',
   },
-  foodOverlay: {
+  imageGradient: {
     position: 'absolute',
-    top: 8,
-    right: 8,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 60,
   },
-  foodBadge: {
-    backgroundColor: 'rgba(0,0,0,0.6)',
+  difficultyBadge: {
+    position: 'absolute',
+    top: 12,
+    left: 12,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-  foodBadgeText: {
+  difficultyBadgeText: {
     color: '#FFFFFF',
-    fontSize: 10,
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  dietaryTagsContainer: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    flexDirection: 'row',
+    gap: 4,
+  },
+  dietaryTagSmall: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
+  },
+  dietaryTagSmallText: {
+    fontSize: 14,
+  },
+  vegetarianTag: {
+    backgroundColor: 'rgba(76, 175, 80, 0.8)',
+  },
+  veganTag: {
+    backgroundColor: 'rgba(102, 187, 106, 0.8)',
+  },
+  glutenFreeTag: {
+    backgroundColor: 'rgba(255, 167, 38, 0.8)',
+  },
+  timeBadge: {
+    position: 'absolute',
+    bottom: 12,
+    right: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
+  },
+  timeBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 12,
     fontWeight: '500',
   },
-  foodInfo: {
-    padding: 12,
+  contentContainer: {
+    padding: 16,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  titleContainer: {
+    flex: 1,
+    marginRight: 8,
   },
   foodName: {
-    fontSize: 15,
+    fontSize: 17,
     fontWeight: '700',
     color: colors.text,
   },
   foodNameSi: {
     fontSize: 13,
     color: colors.textLight,
-    marginTop: 1,
+    marginTop: 2,
   },
-  foodDesc: {
-    fontSize: 12,
-    color: colors.textLight,
-    marginTop: 4,
-    lineHeight: 16,
-  },
-  foodStats: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 8,
-  },
-  foodStat: {
+  caloriesBadge: {
+    backgroundColor: colors.primaryLight + '20',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
     alignItems: 'center',
+    minWidth: 55,
   },
-  foodStatValue: {
-    fontSize: 14,
+  caloriesText: {
+    fontSize: 16,
     fontWeight: '700',
     color: colors.primary,
   },
-  foodStatLabel: {
+  caloriesLabel: {
     fontSize: 9,
     color: colors.textLight,
-    marginTop: 1,
   },
-  dietaryTags: {
-    flexDirection: 'row',
+  foodDesc: {
+    fontSize: 13,
+    color: colors.textLight,
     marginTop: 6,
+    lineHeight: 18,
+  },
+  footerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 12,
+  },
+  servingsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 4,
   },
-  dietaryTag: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  vegetarianTag: {
-    backgroundColor: '#E8F5E9',
-  },
-  veganTag: {
-    backgroundColor: '#C8E6C9',
-  },
-  glutenFreeTag: {
-    backgroundColor: '#FFF3E0',
-  },
-  dietaryTagText: {
+  servingsText: {
     fontSize: 12,
+    color: colors.textLight,
+  },
+  viewDetailsBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  viewDetailsText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.primary,
   },
   loadingContainer: {
     flex: 1,
