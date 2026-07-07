@@ -55,7 +55,7 @@ export default function ScanScreen() {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
-        quality: 0.8,
+        quality: 0.6,
         base64: true,
       });
 
@@ -85,7 +85,7 @@ export default function ScanScreen() {
       setIsAnalyzing(true);
       
       const photo = await cameraRef.current.takePictureAsync({
-        quality: 0.8,
+        quality: 0.6,
         base64: true,
       });
 
