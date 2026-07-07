@@ -121,68 +121,69 @@ export default function ScanScreen() {
       <StatusBar barStyle="light-content" backgroundColor="#000000" />
       <CameraView
         ref={cameraRef}
-        style={StyleSheet.absoluteFillObject}
+        style={styles.camera}
         facing={facing}
         onCameraReady={() => setCameraReady(true)}
         onMountError={(error) => {
           console.error('Camera mount error:', error);
           Alert.alert('Camera Error', 'Failed to start camera');
         }}
-      >
-        <View style={styles.overlay}>
-          <View style={styles.topBar}>
-            <TouchableOpacity style={styles.iconButton} onPress={() => router.back()}>
-              <Ionicons name="arrow-back" size={28} color="#FFFFFF" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.iconButton} onPress={pickFromGallery}>
-              <Ionicons name="images" size={26} color="#FFFFFF" />
-            </TouchableOpacity>
-          </View>
+      />
 
-          <View style={styles.frameContainer}>
-            <View style={styles.frame}>
-              <Text style={styles.frameText}>Position food here</Text>
-            </View>
-          </View>
-
-          <View style={styles.bottomBar}>
-            <TouchableOpacity style={styles.flipButton} onPress={toggleFacing}>
-              <Ionicons name="camera-reverse" size={28} color="#FFFFFF" />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.captureButton, isAnalyzing && styles.captureButtonDisabled]}
-              onPress={capturePhoto}
-              disabled={isAnalyzing || !cameraReady}
-            >
-              {isAnalyzing ? (
-                <ActivityIndicator size="large" color="#FFFFFF" />
-              ) : (
-                <View style={styles.captureInner} />
-              )}
-            </TouchableOpacity>
-            <View style={styles.flipButton} />
-          </View>
-
-          {isAnalyzing && (
-            <View style={styles.loadingOverlay}>
-              <ActivityIndicator size="large" color={colors.primary} />
-              <Text style={styles.loadingText}>Analyzing food...</Text>
-              <Text style={styles.loadingSubText}>Using AI to detect nutrition</Text>
-            </View>
-          )}
+      <View style={styles.overlay}>
+        <View style={styles.topBar}>
+          <TouchableOpacity style={styles.iconButton} onPress={() => router.back()}>
+            <Ionicons name="arrow-back" size={28} color="#FFFFFF" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.iconButton} onPress={pickFromGallery}>
+            <Ionicons name="images" size={26} color="#FFFFFF" />
+          </TouchableOpacity>
         </View>
-      </CameraView>
+
+        <View style={styles.frameContainer}>
+          <View style={styles.frame}>
+            <Text style={styles.frameText}>Position food here</Text>
+          </View>
+        </View>
+
+        <View style={styles.bottomBar}>
+          <TouchableOpacity style={styles.flipButton} onPress={toggleFacing}>
+            <Ionicons name="camera-reverse" size={28} color="#FFFFFF" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.captureButton, isAnalyzing && styles.captureButtonDisabled]}
+            onPress={capturePhoto}
+            disabled={isAnalyzing || !cameraReady}
+          >
+            {isAnalyzing ? (
+              <ActivityIndicator size="large" color="#FFFFFF" />
+            ) : (
+              <View style={styles.captureInner} />
+            )}
+          </TouchableOpacity>
+          <View style={styles.flipButton} />
+        </View>
+
+        {isAnalyzing && (
+          <View style={styles.loadingOverlay}>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={styles.loadingText}>Preparing scan...</Text>
+            <Text style={styles.loadingSubText}>Quick analysis is starting</Text>
+          </View>
+        )}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000000' },
+  camera: StyleSheet.absoluteFillObject,
   centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background },
   permissionText: { fontSize: 16, color: colors.text, marginBottom: 20, textAlign: 'center', paddingHorizontal: 20 },
   permissionButton: { backgroundColor: colors.primary, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 10 },
   permissionButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' },
-  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.2)' },
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.2)', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
   topBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, paddingTop: 50 },
   iconButton: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
   frameContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },

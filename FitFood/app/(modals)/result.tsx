@@ -26,17 +26,24 @@ export default function ResultScreen() {
   const [error, setError] = useState<string | null>(null);
 
   const analyzeFood = useCallback(async () => {
+    if (!imageBase64) {
+      setError('No image found');
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
+      setAlternatives([]);
+
       const data = await analyzeFoodImage(imageBase64);
       setResult(data);
 
-      try {
-        const alt = await getFoodAlternatives(data.foodName);
-        setAlternatives(alt);
-      } catch (altError) {
-        console.log('Error getting alternatives:', altError);
+      if (data.foodName && data.foodName !== 'Food Image') {
+        void getFoodAlternatives(data.foodName)
+          .then(setAlternatives)
+          .catch((altError) => console.log('Error getting alternatives:', altError));
       }
     } catch (err: any) {
       setError(err.message || 'Failed to analyze food. Please try again.');
