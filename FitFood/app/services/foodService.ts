@@ -137,3 +137,5 @@ export const foodService = {
     }
   }
 };
+
+export default foodService;

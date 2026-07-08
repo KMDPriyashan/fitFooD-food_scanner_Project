@@ -41,3 +41,22 @@ app-example
 # generated native folders
 /ios
 /android
+
+
+# Environment variables - NEVER commit these!
+.env
+.env.local
+.env.*.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Node modules
+node_modules/
+
+# Build files
+dist/
+build/
+*.apk
+*.ipa
