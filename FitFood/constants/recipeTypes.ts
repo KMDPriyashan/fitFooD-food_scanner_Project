@@ -38,10 +38,10 @@ export interface Recipe {
 export const DIETARY_OPTIONS = [
   { id: 'vegetarian', label: 'Vegetarian', icon: '🌱' },
   { id: 'vegan', label: 'Vegan', icon: '🌿' },
-  { id: 'gluten-free', label: 'Gluten-Free', icon: '🚫' },
+  { id: 'gluten-free', label: 'Gluten_Free', icon: '🚫' },
   { id: 'keto', label: 'Keto', icon: '🥩' },
-  { id: 'low-carb', label: 'Low-Carb', icon: '🥑' },
-  { id: 'high-protein', label: 'High-Protein', icon: '💪' },
+  { id: 'low-carb', label: 'LowCarb', icon: '🥑' },
+  { id: 'high-protein', label: 'HighProtein', icon: '💪' },
 ];
 
 export const HEALTH_GOALS = [

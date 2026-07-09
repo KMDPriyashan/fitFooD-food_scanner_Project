@@ -75,6 +75,17 @@ export default function RecipesScreen() {
     }
   };
 
+  // ✅ Helper function to get display label from ID
+  const getDietaryLabel = (id: string): string => {
+    const option = DIETARY_OPTIONS.find(opt => opt.id === id);
+    return option ? `${option.icon} ${option.label}` : id;
+  };
+
+  const getGoalLabel = (id: string): string => {
+    const goal = HEALTH_GOALS.find(g => g.id === id);
+    return goal ? `${goal.icon} ${goal.label}` : id;
+  };
+
   const renderForm = () => (
     <ScrollView style={styles.formContainer} showsVerticalScrollIndicator={false}>
       {/* Header */}
@@ -141,7 +152,7 @@ export default function RecipesScreen() {
           </View>
         </View>
 
-        {/* Dietary Preferences */}
+        {/* ✅ Dietary Preferences - FIXED */}
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Dietary Preferences</Text>
           <View style={styles.chipContainer}>
@@ -464,6 +475,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 16,
     gap: 8,
+    backgroundColor: colors.primary,
   },
   generateBtnText: {
     color: '#FFFFFF',
