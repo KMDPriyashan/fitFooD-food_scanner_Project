@@ -1,9 +1,15 @@
 ﻿import { GoogleGenerativeAI } from '@google/generative-ai';
+import { ENV } from '../../config/env';
+
+// Use API key from environment
+const API_KEY = ENV.GEMINI_API_KEY;
 
 // ============================================
 // CONFIGURATION
 // ============================================
-const API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY || '';
+// ✅ Use API key from environment (SECURE!)
+
+
 const MODEL_CANDIDATES = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'];
 
 let genAI: GoogleGenerativeAI | null = null;
@@ -35,7 +41,7 @@ const parseJsonResponse = (text: string) => {
 
 const initializeModel = () => {
   if (!API_KEY) {
-    console.warn('⚠️ Gemini API key not found! Please add EXPO_PUBLIC_GEMINI_API_KEY to .env');
+    console.warn('⚠️ Gemini API key not found! Please add GEMINI_API_KEY to .env');
     return null;
   }
 
@@ -59,7 +65,7 @@ const initializeModel = () => {
 };
 
 type GeminiContentResult = {
-  response: Promise<{ text: () => string }>;
+  response: { text: () => string };
 };
 
 // ============================================
@@ -256,20 +262,29 @@ export const analyzeFoodImage = async (imageBase64: string): Promise<FoodAnalysi
       6. For healthScore: 80-100 = Excellent, 60-79 = Good, 40-59 = Average, 20-39 = Needs Improvement, 0-19 = Unhealthy.
     `;
 
-    const result = await withTimeout(
-      modelInstance.generateContent([
-        prompt,
+    const request = {
+      contents: [
         {
-          inlineData: {
-            mimeType: 'image/jpeg',
-            data: base64Data,
-          },
+          role: 'input',
+          parts: [
+            { text: prompt },
+            {
+              inlineData: {
+                mimeType: 'image/jpeg',
+                data: base64Data,
+              },
+            },
+          ],
         },
-      ]),
+      ],
+    };
+
+    const result = await withTimeout(
+      modelInstance.generateContent(request),
       8000, // 8 second timeout for detailed analysis
     ) as GeminiContentResult;
 
-    const response = await withTimeout(result.response, 3000);
+    const response = result.response;
     const text = response.text();
     console.log('📝 Gemini response received, length:', text.length);
     
@@ -359,7 +374,7 @@ export const getFoodAlternatives = async (foodName: string): Promise<string[]> =
     `;
     
     const result = await withTimeout(modelInstance.generateContent(prompt), 2500) as GeminiContentResult;
-    const response = await withTimeout(result.response, 1500);
+    const response = result.response;
     const text = response.text();
     const parsed = parseJsonResponse(text);
     return parsed.alternatives || ['Grilled Chicken Salad', 'Steamed Vegetables', 'Quinoa Bowl'];
@@ -387,7 +402,7 @@ export const getNutritionAdvice = async (foodName: string, healthScore: number):
     `;
     
     const result = await withTimeout(modelInstance.generateContent(prompt), 2000) as GeminiContentResult;
-    const response = await withTimeout(result.response, 1500);
+    const response = result.response;
     const text = response.text();
     return text || 'Eat in moderation as part of a balanced diet.';
     
@@ -421,15 +436,24 @@ export const quickScanFood = async (imageBase64: string): Promise<FoodAnalysisRe
       healthScore (0-100), goodPoints (3), badPoints (3), allergens, servingSize, cuisine.
     `;
 
-    const result = await withTimeout(
-      modelInstance.generateContent([
-        prompt,
-        { inlineData: { mimeType: 'image/jpeg', data: base64Data } }
-      ]),
-      3000
-    ) as GeminiContentResult;
+const request = {
+      contents: [
+        {
+          role: 'input',
+          parts: [
+            { text: prompt },
+            { inlineData: { mimeType: 'image/jpeg', data: base64Data } },
+          ],
+        },
+      ],
+    };
 
-    const response = await withTimeout(result.response, 1500);
+    const result = await withTimeout(
+      modelInstance.generateContent(request),
+      3000,
+    ) as GeminiContentResult;
+    
+    const response = result.response;
     const text = response.text();
     const parsed = parseJsonResponse(text);
 
@@ -483,4 +507,14 @@ export const quickScanFood = async (imageBase64: string): Promise<FoodAnalysisRe
     console.log('⚠️ Quick scan fallback:', error);
     return getQuickFallbackAnalysis();
   }
+};
+
+// ============================================
+// EXPORT DEFAULT
+// ============================================
+export default {
+  analyzeFoodImage,
+  getFoodAlternatives,
+  getNutritionAdvice,
+  quickScanFood,
 };

@@ -7,6 +7,10 @@
     "icon": "./assets/images/icon.png",
     "scheme": "fitfood",
     "userInterfaceStyle": "automatic",
+    "extra": {
+      "geminiApiKey": "",
+      "environment": "development"
+    },
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true
