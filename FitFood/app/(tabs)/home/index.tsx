@@ -10,10 +10,11 @@ import {
   StatusBar,
 } from 'react-native';
 import { router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../../constants/Colors';
 import { useAuth } from '../../../src/context/AuthContext';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 export default function HomeScreen() {
   const { user } = useAuth();
@@ -24,55 +25,41 @@ export default function HomeScreen() {
     {
       id: 1,
       title: 'Food Database',
-      subtitle: '100+ local foods',
+      subtitle: 'Explore 100+ local foods',
       icon: '🍽',
-      color: '#e83939',
       bgColor: '#FFF0E8',
       route: '/(tabs)/SLfood',
     },
     {
       id: 2,
-      title: 'Food Scanner',
-      subtitle: 'Scan & analyze',
-      icon: '📷',
-      color: '#6C5CE7',
+      title: 'Expert Panel',
+      subtitle: 'Connect with health experts',
+      icon: '🧑‍⚕️',
       bgColor: '#F0EDFF',
       route: '/(tabs)/scan',
     },
     {
       id: 3,
       title: 'Smart Recipes',
-      subtitle: 'Track progress',
+      subtitle: 'Personalized meal ideas',
       icon: '🥪',
-      color: '#00B894',
       bgColor: '#E8F8F5',
       route: '/(modals)/recipes',
     },
     {
       id: 4,
-      title: 'Barcode Service',
-      subtitle: 'Scan & analyze',
+      title: 'Food Marketplace',
+      subtitle: 'Find healthy foods near you',
       icon: '🔍',
-      color: '#FDCB6E',
       bgColor: '#FFF8E8',
       route: '/(modals)/barcode',
     },
     {
       id: 5,
-      title: 'Sustainability',
-      subtitle: 'Eco score',
-      icon: '🌿',
-      color: '#00B894',
+      title: 'Weekly Meal Planner',
+      subtitle: 'Plan your weekly meals',
+      icon: '🧑‍🍳',
       bgColor: '#E8F8F5',
-      route: '/(modals)/result',
-    },
-    {
-      id: 6,
-      title: 'Community',
-      subtitle: 'Team up & win',
-      icon: '👥',
-      color: '#E17055',
-      bgColor: '#FFEEEB',
       route: '/(modals)/result',
     },
   ];
@@ -89,7 +76,11 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="light-content" backgroundColor={colors.primary || '#4A3AFF'} />
       
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.container} 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
         {/* Header Section */}
         <View style={styles.header}>
           <View style={styles.headerContent}>
@@ -107,32 +98,30 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </View>
           
-          {/* Soft Geometric Background Circles */}
           <View style={styles.headerDecoration}>
             <View style={styles.decoCircle1} />
             <View style={styles.decoCircle2} />
           </View>
         </View>
 
-        {/* Welcome / Daily Insights Card */}
+        {/* Welcome Card */}
         <View style={styles.welcomeCard}>
           <View style={styles.welcomeHeader}>
             <Text style={styles.welcomeEmoji}>🥗</Text>
-            <Text style={styles.welcomeTitle}>Welcome to FitFood !</Text>
+            <Text style={styles.welcomeTitle}>Welcome to FitFood!</Text>
           </View>
           <Text style={styles.welcomeText}>
             Smart choices start now! 🌟 Hydrate first to fire up your metabolism, then tap below to log your lunch.
           </Text>
         </View>
 
-        {/* Features Section Header */}
+        {/* Features Section - Full Width Cards (Style 3) */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Explore Features</Text>
-          <Text style={styles.sectionSubtitle}>6 powerful tools for a healthier you</Text>
+          <Text style={styles.sectionSubtitle}>5 powerful tools for a healthier you</Text>
         </View>
 
-        {/* Features Grid */}
-        <View style={styles.featuresGrid}>
+        <View style={styles.featuresContainer}>
           {features.map((feature) => (
             <TouchableOpacity 
               key={feature.id}
@@ -140,11 +129,16 @@ export default function HomeScreen() {
               onPress={() => handleFeaturePress(feature.route)}
               activeOpacity={0.7}
             >
-              <View style={[styles.featureIcon, { backgroundColor: feature.bgColor }]}>
-                <Text style={styles.featureEmoji}>{feature.icon}</Text>
+              <View style={styles.featureRow}>
+                <View style={[styles.featureIcon, { backgroundColor: feature.bgColor }]}>
+                  <Text style={styles.featureEmoji}>{feature.icon}</Text>
+                </View>
+                <View style={styles.featureText}>
+                  <Text style={styles.featureTitle}>{feature.title}</Text>
+                  <Text style={styles.featureDesc} numberOfLines={1}>{feature.subtitle}</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color="#94A3B8" />
               </View>
-              <Text style={styles.featureTitle} numberOfLines={1}>{feature.title}</Text>
-              <Text style={styles.featureDesc} numberOfLines={1}>{feature.subtitle}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -161,7 +155,8 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
-        
+        {/* Footer */}
+        <Text style={styles.footer}>FitFood v1.0.0 • Your AI Nutritionist</Text>
       </ScrollView>
     </SafeAreaView>
   );
@@ -174,15 +169,19 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC', // Much softer, modern light grey/blue background
+    backgroundColor: '#F8FAFC',
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 20,
   },
 
-  // Header Modern Styling
+  // Header
   header: {
     backgroundColor: colors.primary || '#4A3AFF',
     paddingHorizontal: 24,
     paddingTop: 50,
-    paddingBottom: 40,
+    paddingBottom: 30,
     borderBottomLeftRadius: 36,
     borderBottomRightRadius: 36,
     position: 'relative',
@@ -211,7 +210,7 @@ const styles = StyleSheet.create({
   greeting: {
     fontSize: 16,
     color: 'rgba(255,255,255,0.9)',
-    marginTop: 16,
+    marginTop: 12,
     fontWeight: '400',
   },
   userNameText: {
@@ -236,7 +235,7 @@ const styles = StyleSheet.create({
     opacity: 0.9,
   },
 
-  // Premium Background Deco
+  // Header Decoration
   headerDecoration: {
     position: 'absolute',
     top: 0,
@@ -263,118 +262,124 @@ const styles = StyleSheet.create({
     left: -20,
   },
 
-  // Welcome / Daily Tip Card (Enhanced)
+  // Welcome Card
   welcomeCard: {
     backgroundColor: '#FFFFFF',
     marginHorizontal: 20,
-    marginTop: -20, // Negative margin to overlay onto the header beautifully
-    padding: 20,
-    borderRadius: 24,
+    marginTop: -16,
+    padding: 18,
+    borderRadius: 20,
     shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 10 },
+    shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.06,
-    shadowRadius: 20,
-    elevation: 5,
+    shadowRadius: 16,
+    elevation: 4,
   },
   welcomeHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
     gap: 8,
   },
   welcomeEmoji: {
-    fontSize: 22,
+    fontSize: 20,
   },
   welcomeTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: colors.text || '#1E293B',
+    color: '#1E293B',
   },
   welcomeText: {
     fontSize: 13,
-    color: colors.textLight || '#64748B',
+    color: '#64748B',
     lineHeight: 20,
   },
 
-  // Features Section Layout
+  // Features Section
   sectionHeader: {
-    paddingHorizontal: 24,
-    marginTop: 28,
-    marginBottom: 16,
+    paddingHorizontal: 20,
+    marginTop: 20,
+    marginBottom: 12,
   },
   sectionTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: colors.text || '#1E293B',
+    color: '#1E293B',
     letterSpacing: -0.3,
   },
   sectionSubtitle: {
     fontSize: 13,
-    color: colors.textLight || '#64748B',
+    color: '#64748B',
     marginTop: 2,
   },
-  featuresGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+
+  // ============================================
+  // STYLE 3: FULL WIDTH CARDS
+  // ============================================
+  featuresContainer: {
     paddingHorizontal: 20,
   },
   featureCard: {
-    width: (width - 56) / 2, // Dynamic width calculation with clean spacing
     backgroundColor: '#FFFFFF',
-    padding: 13,
-    borderRadius: 20,
-    marginBottom: 16,
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.03,
-    shadowRadius: 12,
-    elevation: 2,
-    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+    marginBottom: 10,
     borderWidth: 1,
-    borderColor: '#F1F5F9', // Subtle borders for sleek definition
+    borderColor: '#F1F5F9',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    elevation: 1,
+  },
+  featureRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
   featureIcon: {
-    width: 52,
-    height: 52,
-    borderRadius: 16, // Squircle shape instead of perfect circle for a modern iOS feel
+    width: 48,
+    height: 48,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
+    flexShrink: 0,
   },
   featureEmoji: {
-    fontSize: 24,
+    fontSize: 22,
+  },
+  featureText: {
+    flex: 1,
   },
   featureTitle: {
     fontSize: 15,
     fontWeight: '600',
-    color: colors.text || '#1E293B',
-    textAlign: 'center',
+    color: '#1E293B',
   },
   featureDesc: {
     fontSize: 12,
-    color: colors.textLight || '#64748B',
-    textAlign: 'center',
-    marginTop: 4,
+    color: '#64748B',
+    marginTop: 2,
   },
 
-  // CTA Quick Action Button
+  // Quick Action Button
   quickAction: {
     paddingHorizontal: 20,
     marginTop: 12,
-    marginBottom: 16,
+    marginBottom: 8,
   },
   quickActionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.primary || '#4A3AFF',
-    paddingVertical: 16,
-    borderRadius: 20,
+    paddingVertical: 14,
+    borderRadius: 18,
     shadowColor: colors.primary || '#4A3AFF',
-    shadowOffset: { width: 0, height: 8 },
+    shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.2,
-    shadowRadius: 16,
+    shadowRadius: 14,
     elevation: 4,
     gap: 8,
   },
@@ -394,12 +399,12 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
 
-  // Footer Styling
+  // Footer
   footer: {
     textAlign: 'center',
     fontSize: 12,
-    color: colors.textLight || '#94A3B8',
-    paddingVertical: 24,
+    color: '#94A3B8',
+    paddingVertical: 16,
     opacity: 0.6,
     letterSpacing: 0.3,
   },
