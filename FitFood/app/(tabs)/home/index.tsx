@@ -154,9 +154,6 @@ export default function HomeScreen() {
             <View style={styles.quickActionArrow} />
           </TouchableOpacity>
         </View>
-
-        {/* Footer */}
-        <Text style={styles.footer}>FitFood v1.0.0 • Your AI Nutritionist</Text>
       </ScrollView>
     </SafeAreaView>
   );
