@@ -52,7 +52,7 @@ export default function HomeScreen() {
       subtitle: 'Find healthy foods near you',
       icon: '🔍',
       bgColor: '#FFF8E8',
-      route: '/(modals)/barcode',
+      route: '/(tabs)/marketplace',
     },
     {
       id: 5,
@@ -147,7 +147,7 @@ export default function HomeScreen() {
         <View style={styles.quickAction}>
           <TouchableOpacity 
             style={styles.quickActionBtn}
-            onPress={() => router.push('/(tabs)/scan')}
+            onPress={() => router.push('/(tabs)/marketplace')}
             activeOpacity={0.85}
           >
             <Text style={styles.quickActionText}>Start Scanning Now</Text>
