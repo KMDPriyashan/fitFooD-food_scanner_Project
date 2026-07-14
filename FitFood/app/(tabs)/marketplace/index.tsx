@@ -130,7 +130,7 @@ export default function MarketplaceScreen() {
     setFilteredProducts(filtered);
   };
 
-  // ✅ FIXED: Handle add to cart with proper CartItem structure
+  // ✅ Handle add to cart with proper CartItem structure including image
   const handleAddToCart = async (product: Product) => {
     try {
       const cart = await marketplaceService.getCart();
@@ -142,13 +142,13 @@ export default function MarketplaceScreen() {
         // Update existing item quantity
         cart[existingItemIndex].quantity += 1;
       } else {
-        // ✅ FIXED: Create new cart item and PUSH it to cart
+        // ✅ Create new cart item with all product data including image
         const newCartItem = {
           id: product.id,
           quantity: 1,
           name: product.name,
           price: product.price,
-          image: product.image,
+          image: product.image || (product as any).image_url || 'https://via.placeholder.com/80/4CAF50/FFFFFF?text=Food',
           unit: product.unit,
           description: product.description,
           category: product.category,
@@ -163,7 +163,7 @@ export default function MarketplaceScreen() {
           tags: product.tags,
         };
         
-        // ✅ IMPORTANT: Push the new item to cart
+        // Push the new item to cart
         cart.push(newCartItem);
       }
       
@@ -175,9 +175,15 @@ export default function MarketplaceScreen() {
       setCartCount(totalItems);
       
       Alert.alert(
-        'Added to Cart',
+        '✅ Added to Cart',
         `${product.name} added to your cart!`,
-        [{ text: 'OK' }]
+        [
+          { text: 'Continue Shopping', style: 'cancel' },
+          { 
+            text: 'View Cart', 
+            onPress: () => router.push('/(modals)/cart') 
+          }
+        ]
       );
     } catch (error) {
       console.error('Error adding to cart:', error);
@@ -187,7 +193,7 @@ export default function MarketplaceScreen() {
 
   const renderProductCard = ({ item }: { item: Product }) => {
     // Get image from multiple possible properties
-    const imageUrl = (item as any).image || (item as any).image_url || 'https://via.placeholder.com/150';
+    const imageUrl = (item as any).image || (item as any).image_url || 'https://via.placeholder.com/150/4CAF50/FFFFFF?text=Food';
     // Check both property formats
     const isOrganic = (item as any).isOrganic !== undefined ? (item as any).isOrganic : (item as any).is_organic;
     const isSeasonal = (item as any).isSeasonal !== undefined ? (item as any).isSeasonal : (item as any).is_seasonal;
@@ -223,11 +229,12 @@ export default function MarketplaceScreen() {
               <Text style={styles.productPrice}>LKR {item.price}</Text>
               <Text style={styles.productUnit}>per {item.unit}</Text>
             </View>
+            {/* ✅ Changed from + icon to "Add" button */}
             <TouchableOpacity
-              style={styles.addBtn}
+              style={styles.addToCartBtn}
               onPress={() => handleAddToCart(item)}
             >
-              <Ionicons name="add" size={20} color="#FFFFFF" />
+              <Text style={styles.addToCartText}>Add</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -708,13 +715,19 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: '#94A3B8',
   },
-  addBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+  // ✅ New "Add to Cart" button styles (replacing + icon)
+  addToCartBtn: {
     backgroundColor: '#E53935',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  addToCartText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
   },
 
   // Empty State
