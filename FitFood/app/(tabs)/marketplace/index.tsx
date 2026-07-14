@@ -49,7 +49,7 @@ export default function MarketplaceScreen() {
 
   useEffect(() => {
     applyFilters();
-  }, [selectedCategory, searchQuery, products, filters]);
+  }, [selectedCategory, searchQuery, products, filters.isOrganic, filters.isLocal, filters.isSeasonal, filters.priceRange]);
 
   const loadProducts = async () => {
     setLoading(true);
@@ -69,9 +69,11 @@ export default function MarketplaceScreen() {
   const loadCartCount = async () => {
     try {
       const cart = await marketplaceService.getCart();
-      setCartCount(cart.reduce((sum, item) => sum + item.quantity, 0));
+      const totalItems = cart.reduce((sum, item) => sum + (item.quantity || 0), 0);
+      setCartCount(totalItems);
     } catch (error) {
       console.error('Error loading cart:', error);
+      setCartCount(0);
     }
   };
 
@@ -81,29 +83,42 @@ export default function MarketplaceScreen() {
     // Category filter
     if (selectedCategory !== 'all') {
       filtered = filtered.filter(p => 
-        p.category.toLowerCase() === selectedCategory.toLowerCase()
+        p.category && p.category.toLowerCase() === selectedCategory.toLowerCase()
       );
     }
 
     // Search filter
     if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
+      const q = searchQuery.toLowerCase().trim();
       filtered = filtered.filter(p =>
-        p.name.toLowerCase().includes(q) ||
-        p.description.toLowerCase().includes(q) ||
-        p.nameSi?.toLowerCase().includes(q)
+        (p.name && p.name.toLowerCase().includes(q)) ||
+        (p.description && p.description.toLowerCase().includes(q)) ||
+        (p.nameSi && p.nameSi.toLowerCase().includes(q))
       );
     }
 
-    // Advanced filters
+    // Organic filter - handle both property formats
     if (filters.isOrganic) {
-      filtered = filtered.filter(p => p.isOrganic);
+      filtered = filtered.filter(p => {
+        const isOrganic = (p as any).isOrganic !== undefined ? (p as any).isOrganic : (p as any).is_organic;
+        return isOrganic === true;
+      });
     }
+
+    // Local filter - handle both property formats
     if (filters.isLocal) {
-      filtered = filtered.filter(p => p.isLocal);
+      filtered = filtered.filter(p => {
+        const isLocal = (p as any).isLocal !== undefined ? (p as any).isLocal : (p as any).is_local;
+        return isLocal === true;
+      });
     }
+
+    // Seasonal filter - handle both property formats
     if (filters.isSeasonal) {
-      filtered = filtered.filter(p => p.isSeasonal);
+      filtered = filtered.filter(p => {
+        const isSeasonal = (p as any).isSeasonal !== undefined ? (p as any).isSeasonal : (p as any).is_seasonal;
+        return isSeasonal === true;
+      });
     }
 
     // Price range
@@ -115,62 +130,110 @@ export default function MarketplaceScreen() {
     setFilteredProducts(filtered);
   };
 
+  // ✅ FIXED: Handle add to cart with proper CartItem structure
   const handleAddToCart = async (product: Product) => {
-    const cart = await marketplaceService.getCart();
-    const existingItem = cart.find(item => item.id === product.id);
-    
-    if (existingItem) {
-      existingItem.quantity += 1;
-    } else {
-      cart.push({ ...product, quantity: 1 });
+    try {
+      const cart = await marketplaceService.getCart();
+      
+      // Check if product already exists in cart
+      const existingItemIndex = cart.findIndex(item => item.id === product.id);
+      
+      if (existingItemIndex !== -1) {
+        // Update existing item quantity
+        cart[existingItemIndex].quantity += 1;
+      } else {
+        // ✅ FIXED: Create new cart item and PUSH it to cart
+        const newCartItem = {
+          id: product.id,
+          quantity: 1,
+          name: product.name,
+          price: product.price,
+          image: product.image,
+          unit: product.unit,
+          description: product.description,
+          category: product.category,
+          isOrganic: product.isOrganic,
+          isLocal: product.isLocal,
+          isSeasonal: product.isSeasonal,
+          seller: product.seller,
+          available: product.available,
+          stock: product.stock,
+          rating: product.rating,
+          reviews: product.reviews,
+          tags: product.tags,
+        };
+        
+        // ✅ IMPORTANT: Push the new item to cart
+        cart.push(newCartItem);
+      }
+      
+      // Save updated cart
+      await marketplaceService.saveCart(cart);
+      
+      // Update cart count
+      const totalItems = cart.reduce((sum, item) => sum + (item.quantity || 0), 0);
+      setCartCount(totalItems);
+      
+      Alert.alert(
+        'Added to Cart',
+        `${product.name} added to your cart!`,
+        [{ text: 'OK' }]
+      );
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      Alert.alert('Error', 'Failed to add item to cart. Please try again.');
     }
-    
-    await marketplaceService.saveCart(cart);
-    setCartCount(cart.reduce((sum, item) => sum + item.quantity, 0));
-    Alert.alert('Added to Cart', `${product.name} added to your cart!`);
   };
 
-  const renderProductCard = ({ item }: { item: Product }) => (
-    <TouchableOpacity
-      style={styles.productCard}
-      onPress={() => router.push({
-        pathname: '/(modals)/product-detail',
-        params: { productId: item.id }
-      })}
-      activeOpacity={0.8}
-    >
-      <Image source={{ uri: item.image }} style={styles.productImage} />
-      {item.isOrganic && (
-        <View style={styles.organicBadge}>
-          <Text style={styles.organicBadgeText}>🌱 Organic</Text>
-        </View>
-      )}
-      {item.isSeasonal && (
-        <View style={[styles.organicBadge, styles.seasonalBadge]}>
-          <Text style={styles.organicBadgeText}>📅 Seasonal</Text>
-        </View>
-      )}
-      <View style={styles.productInfo}>
-        <Text style={styles.productName} numberOfLines={1}>{item.name}</Text>
-        {item.nameSi && (
-          <Text style={styles.productNameSi} numberOfLines={1}>{item.nameSi}</Text>
-        )}
-        <Text style={styles.productDesc} numberOfLines={2}>{item.description}</Text>
-        <View style={styles.productFooter}>
-          <View>
-            <Text style={styles.productPrice}>LKR {item.price}</Text>
-            <Text style={styles.productUnit}>per {item.unit}</Text>
+  const renderProductCard = ({ item }: { item: Product }) => {
+    // Get image from multiple possible properties
+    const imageUrl = (item as any).image || (item as any).image_url || 'https://via.placeholder.com/150';
+    // Check both property formats
+    const isOrganic = (item as any).isOrganic !== undefined ? (item as any).isOrganic : (item as any).is_organic;
+    const isSeasonal = (item as any).isSeasonal !== undefined ? (item as any).isSeasonal : (item as any).is_seasonal;
+
+    return (
+      <TouchableOpacity
+        style={styles.productCard}
+        onPress={() => router.push({
+          pathname: '/(modals)/product-detail',
+          params: { productId: item.id }
+        })}
+        activeOpacity={0.8}
+      >
+        <Image source={{ uri: imageUrl }} style={styles.productImage} />
+        {isOrganic && (
+          <View style={styles.organicBadge}>
+            <Text style={styles.organicBadgeText}>🌱 Organic</Text>
           </View>
-          <TouchableOpacity
-            style={styles.addBtn}
-            onPress={() => handleAddToCart(item)}
-          >
-            <Ionicons name="add" size={20} color="#FFFFFF" />
-          </TouchableOpacity>
+        )}
+        {isSeasonal && (
+          <View style={[styles.organicBadge, styles.seasonalBadge]}>
+            <Text style={styles.organicBadgeText}>📅 Seasonal</Text>
+          </View>
+        )}
+        <View style={styles.productInfo}>
+          <Text style={styles.productName} numberOfLines={1}>{item.name}</Text>
+          {item.nameSi && (
+            <Text style={styles.productNameSi} numberOfLines={1}>{item.nameSi}</Text>
+          )}
+          <Text style={styles.productDesc} numberOfLines={2}>{item.description}</Text>
+          <View style={styles.productFooter}>
+            <View>
+              <Text style={styles.productPrice}>LKR {item.price}</Text>
+              <Text style={styles.productUnit}>per {item.unit}</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.addBtn}
+              onPress={() => handleAddToCart(item)}
+            >
+              <Ionicons name="add" size={20} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
-    </TouchableOpacity>
-  );
+      </TouchableOpacity>
+    );
+  };
 
   const renderCategory = ({ item }: { item: Category }) => (
     <TouchableOpacity
@@ -274,14 +337,18 @@ export default function MarketplaceScreen() {
           </View>
           <TouchableOpacity
             style={styles.filterResetBtn}
-            onPress={() => setFilters({
-              category: 'all',
-              priceRange: { min: 0, max: 1000 },
-              isOrganic: false,
-              isLocal: false,
-              isSeasonal: false,
-              searchQuery: '',
-            })}
+            onPress={() => {
+              setFilters({
+                category: 'all',
+                priceRange: { min: 0, max: 1000 },
+                isOrganic: false,
+                isLocal: false,
+                isSeasonal: false,
+                searchQuery: '',
+              });
+              setSelectedCategory('all');
+              setSearchQuery('');
+            }}
           >
             <Text style={styles.filterResetText}>Reset Filters</Text>
           </TouchableOpacity>
@@ -330,6 +397,23 @@ export default function MarketplaceScreen() {
                 <Text style={styles.emptyText}>
                   Try adjusting your filters or search term
                 </Text>
+                <TouchableOpacity
+                  style={styles.clearFiltersBtn}
+                  onPress={() => {
+                    setFilters({
+                      category: 'all',
+                      priceRange: { min: 0, max: 1000 },
+                      isOrganic: false,
+                      isLocal: false,
+                      isSeasonal: false,
+                      searchQuery: '',
+                    });
+                    setSelectedCategory('all');
+                    setSearchQuery('');
+                  }}
+                >
+                  <Text style={styles.clearFiltersText}>Clear All Filters</Text>
+                </TouchableOpacity>
               </View>
             ) : (
               <FlatList
@@ -378,7 +462,7 @@ const styles = StyleSheet.create({
   },
   headerGradient: {
     paddingHorizontal: 20,
-    paddingTop: 12,
+    paddingTop: 72,
     paddingBottom: 20,
   },
   headerContent: {
@@ -652,5 +736,17 @@ const styles = StyleSheet.create({
     color: '#64748B',
     textAlign: 'center',
     marginTop: 4,
+  },
+  clearFiltersBtn: {
+    marginTop: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    backgroundColor: '#E53935',
+    borderRadius: 10,
+  },
+  clearFiltersText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
