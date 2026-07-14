@@ -38,9 +38,18 @@ export default function CartScreen() {
   }, []);
 
   const loadCart = async () => {
-    const cart = await marketplaceService.getCart();
-    setCartItems(cart);
-    calculateTotal(cart);
+    try {
+      const cart = await marketplaceService.getCart();
+      console.log('Cart loaded:', cart.length, 'items');
+      // Log first item to see structure
+      if (cart.length > 0) {
+        console.log('First cart item:', JSON.stringify(cart[0], null, 2));
+      }
+      setCartItems(cart);
+      calculateTotal(cart);
+    } catch (error) {
+      console.error('Error loading cart:', error);
+    }
   };
 
   const calculateTotal = (items: CartItem[]) => {
@@ -123,6 +132,56 @@ export default function CartScreen() {
   const subtotal = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
   const taxAmount = subtotal * tax;
 
+  // ✅ Get image URL with multiple fallbacks
+  const getImageUrl = (item: CartItem): string => {
+    // Check all possible image sources
+    const imageSources = [
+      item.image,
+      (item as any).image_url,
+      (item as any).product?.image,
+      (item as any).product?.image_url,
+      (item as any).product?.images?.[0],
+      (item as any).imageUrl,
+      (item as any).photo,
+      (item as any).picture,
+    ];
+
+    for (const source of imageSources) {
+      if (source && typeof source === 'string') {
+        // If it's a valid URL, return it
+        if (source.startsWith('http')) {
+          return source;
+        }
+        // If it's a local path or base64, return it
+        if (source.startsWith('file://') || source.startsWith('data:image')) {
+          return source;
+        }
+      }
+    }
+
+    // ✅ FIXED: Create a better fallback with product name
+    const productName = item.name || 'Food';
+    const category = item.category || 'Fresh';
+    
+    // Category-based colors
+    const colorMap: { [key: string]: string } = {
+      'Vegetables': '4CAF50',
+      'Fruits': 'FF9800',
+      'Grains': '795548',
+      'Dairy': '2196F3',
+      'Spices': '9C27B0',
+      'Meat': 'F44336',
+      'Seafood': '00BCD4',
+      'Beverages': '3F51B5',
+      'Snacks': 'FF5722',
+    };
+    
+    const color = colorMap[category] || '4CAF50';
+    const encodedName = encodeURIComponent(productName.substring(0, 12));
+    
+    return `https://via.placeholder.com/80/${color}/FFFFFF?text=${encodedName}`;
+  };
+
   if (cartItems.length === 0) {
     return (
       <SafeAreaView style={styles.safeArea}>
@@ -195,52 +254,66 @@ export default function CartScreen() {
         {/* Cart Items */}
         <View style={styles.itemsContainer}>
           <Text style={styles.sectionTitle}>Order Items</Text>
-          {cartItems.map((item, index) => (
-            <Animated.View 
-              key={item.id} 
-              style={[
-                styles.cartItem,
-                { 
-                  transform: [{
-                    translateX: fadeAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [50 * (index + 1), 0],
-                    })
-                  }]
-                }
-              ]}
-            >
-              <Image 
-                source={{ uri: item.image || 'https://via.placeholder.com/80/4CAF50/FFFFFF?text=Food' }} 
-                style={styles.itemImage} 
-              />
-              <View style={styles.itemInfo}>
-                <Text style={styles.itemName}>{item.name}</Text>
-                <Text style={styles.itemCategory}>{item.category || 'Fresh Food'}</Text>
-                <View style={styles.priceRow}>
-                  <Text style={styles.itemPrice}>LKR {item.price}</Text>
-                  <View style={styles.itemActions}>
-                    <TouchableOpacity
-                      style={styles.qtyBtn}
-                      onPress={() => updateQuantity(item.id, -1)}
-                    >
-                      <Ionicons name="remove" size={14} color="#E53935" />
-                    </TouchableOpacity>
-                    <Text style={styles.qtyText}>{item.quantity}</Text>
-                    <TouchableOpacity
-                      style={styles.qtyBtn}
-                      onPress={() => updateQuantity(item.id, 1)}
-                    >
-                      <Ionicons name="add" size={14} color="#E53935" />
-                    </TouchableOpacity>
+          {cartItems.map((item, index) => {
+            const imageUrl = getImageUrl(item);
+            return (
+              <Animated.View 
+                key={item.id} 
+                style={[
+                  styles.cartItem,
+                  { 
+                    transform: [{
+                      translateX: fadeAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [50 * (index + 1), 0],
+                      })
+                    }]
+                  }
+                ]}
+              >
+                {/* ✅ Display item image with proper fallback */}
+                <Image 
+                  source={{ 
+                    uri: imageUrl,
+                    cache: 'force-cache',
+                  }} 
+                  style={styles.itemImage}
+                  resizeMode="cover"
+                  onError={(e) => {
+                    console.log('Image failed to load for:', item.name, e.nativeEvent.error);
+                  }}
+                  onLoad={() => {
+                    console.log('Image loaded for:', item.name);
+                  }}
+                />
+                <View style={styles.itemInfo}>
+                  <Text style={styles.itemName}>{item.name}</Text>
+                  <Text style={styles.itemCategory}>{item.category || 'Fresh Food'}</Text>
+                  <View style={styles.priceRow}>
+                    <Text style={styles.itemPrice}>LKR {item.price}</Text>
+                    <View style={styles.itemActions}>
+                      <TouchableOpacity
+                        style={styles.qtyBtn}
+                        onPress={() => updateQuantity(item.id, -1)}
+                      >
+                        <Ionicons name="remove" size={14} color="#E53935" />
+                      </TouchableOpacity>
+                      <Text style={styles.qtyText}>{item.quantity}</Text>
+                      <TouchableOpacity
+                        style={styles.qtyBtn}
+                        onPress={() => updateQuantity(item.id, 1)}
+                      >
+                        <Ionicons name="add" size={14} color="#E53935" />
+                      </TouchableOpacity>
+                    </View>
                   </View>
                 </View>
-              </View>
-              <TouchableOpacity onPress={() => removeItem(item.id)} style={styles.removeBtn}>
-                <Ionicons name="trash-outline" size={18} color="#F44336" />
-              </TouchableOpacity>
-            </Animated.View>
-          ))}
+                <TouchableOpacity onPress={() => removeItem(item.id)} style={styles.removeBtn}>
+                  <Ionicons name="trash-outline" size={18} color="#F44336" />
+                </TouchableOpacity>
+              </Animated.View>
+            );
+          })}
         </View>
 
         {/* Order Summary */}
@@ -433,6 +506,7 @@ const styles = StyleSheet.create({
     height: 60,
     borderRadius: 10,
     resizeMode: 'cover',
+    backgroundColor: '#f0f0f0',
   },
   itemInfo: {
     flex: 1,
@@ -545,7 +619,7 @@ const styles = StyleSheet.create({
 
   // Promo
   promoContainer: {
-    marginBottom: 16,
+    marginBottom: 36,
   },
   promoInput: {
     flexDirection: 'row',
@@ -652,6 +726,7 @@ const styles = StyleSheet.create({
   checkoutBtn: {
     borderRadius: 14,
     overflow: 'hidden',
+    marginBottom: 10
   },
   checkoutGradient: {
     flexDirection: 'row',
