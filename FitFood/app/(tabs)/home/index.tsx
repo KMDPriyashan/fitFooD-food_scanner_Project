@@ -147,7 +147,7 @@ export default function HomeScreen() {
         <View style={styles.quickAction}>
           <TouchableOpacity 
             style={styles.quickActionBtn}
-            onPress={() => router.push('/(tabs)/scan')}
+            onPress={() => router.push('/(tabs)/marketplace')}
             activeOpacity={0.85}
           >
             <Text style={styles.quickActionText}>Start Scanning Now</Text>
