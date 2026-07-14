@@ -52,7 +52,7 @@ export default function HomeScreen() {
       subtitle: 'Find healthy foods near you',
       icon: '🔍',
       bgColor: '#FFF8E8',
-      route: '/(modals)/barcode',
+      route: '/(tabs)/marketplace',
     },
     {
       id: 5,
