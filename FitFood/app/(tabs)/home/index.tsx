@@ -60,7 +60,7 @@ export default function HomeScreen() {
       subtitle: 'Plan your weekly meals',
       icon: '🧑‍🍳',
       bgColor: '#E8F8F5',
-      route: '/(modals)/result',
+      route: '/(tabs)/meal-planner',
     },
   ];
 
