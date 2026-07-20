@@ -12,6 +12,7 @@ import {
   Linking,
   Dimensions,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -72,6 +73,37 @@ const SPECIALTIES = [
   'Weight Management',
 ];
 
+// ============================================
+// AVAILABLE DATES & TIMES
+// ============================================
+const AVAILABLE_DATES = [
+  { label: 'Mon 14', value: '2024-07-14' },
+  { label: 'Tue 15', value: '2024-07-15' },
+  { label: 'Wed 16', value: '2024-07-16' },
+  { label: 'Thu 17', value: '2024-07-17' },
+  { label: 'Fri 18', value: '2024-07-18' },
+  { label: 'Sat 19', value: '2024-07-19' },
+  { label: 'Mon 21', value: '2024-07-21' },
+  { label: 'Tue 22', value: '2024-07-22' },
+];
+
+const AVAILABLE_TIMES = [
+  '9:00 AM',
+  '9:30 AM',
+  '10:00 AM',
+  '10:30 AM',
+  '11:00 AM',
+  '11:30 AM',
+  '12:00 PM',
+  '2:00 PM',
+  '2:30 PM',
+  '3:00 PM',
+  '3:30 PM',
+  '4:00 PM',
+  '4:30 PM',
+  '5:00 PM',
+];
+
 export default function ScanScreen() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -83,6 +115,15 @@ export default function ScanScreen() {
   const [selectedExpert, setSelectedExpert] = useState<Expert | null>(null);
   const [showBooking, setShowBooking] = useState(false);
   const [showAllDistricts, setShowAllDistricts] = useState(false);
+  const [bookingLoading, setBookingLoading] = useState(false);
+
+  // ✅ Booking Form States
+  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedTime, setSelectedTime] = useState('');
+  const [bookingNotes, setBookingNotes] = useState('');
+  const [bookingName, setBookingName] = useState('');
+  const [bookingEmail, setBookingEmail] = useState('');
+  const [bookingPhone, setBookingPhone] = useState('');
 
   // Load experts from database
   useEffect(() => {
@@ -167,7 +208,108 @@ export default function ScanScreen() {
 
   const handleBookAppointment = (expert: Expert) => {
     setSelectedExpert(expert);
+    // ✅ Reset booking form
+    setSelectedDate('');
+    setSelectedTime('');
+    setBookingNotes('');
+    setBookingEmail(user?.email || '');
+    setBookingPhone(user?.phone || '');
     setShowBooking(true);
+  };
+
+  // ✅ Send Email via Linking
+  const sendBookingEmail = async () => {
+    if (!selectedExpert) return;
+
+    // Validate form
+    if (!selectedDate) {
+      Alert.alert('Error', 'Please select a date');
+      return;
+    }
+    if (!selectedTime) {
+      Alert.alert('Error', 'Please select a time');
+      return;
+    }
+    if (!bookingName.trim()) {
+      Alert.alert('Error', 'Please enter your name');
+      return;
+    }
+    if (!bookingEmail.trim()) {
+      Alert.alert('Error', 'Please enter your email');
+      return;
+    }
+
+    setBookingLoading(true);
+
+    try {
+      // Build email content
+      const subject = `📅 Consultation Booking - ${selectedExpert.name}`;
+      const body = `
+Dear ${selectedExpert.name},
+
+I would like to schedule a consultation with you.
+
+📋 Booking Details:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+👤 Patient Name: ${bookingName}
+📧 Email: ${bookingEmail}
+📱 Phone: ${bookingPhone || 'Not provided'}
+📅 Preferred Date: ${selectedDate}
+⏰ Preferred Time: ${selectedTime}
+🏥 Specialty: ${selectedExpert.specialty}
+
+📝 Health Concerns / Notes:
+${bookingNotes || 'No additional notes provided.'}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Please confirm if this time slot is available.
+
+Thank you,
+${bookingName}
+
+---
+📱 Sent via FitFood App
+🌐 https://fitfood.app
+`;
+
+      // Create mailto URL
+      const mailtoUrl = `mailto:${selectedExpert.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+      // Open email client
+      const supported = await Linking.canOpenURL(mailtoUrl);
+      
+      if (supported) {
+        await Linking.openURL(mailtoUrl);
+        
+        // Show success message
+        Alert.alert(
+          '✅ Booking Request Sent',
+          `Your consultation request has been sent to ${selectedExpert.name}.\n\nPlease check your email for confirmation.`,
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                setShowBooking(false);
+                setBookingLoading(false);
+              }
+            }
+          ]
+        );
+      } else {
+        Alert.alert(
+          'Email Client Not Found',
+          'Please install an email client to send the booking request.',
+          [{ text: 'OK' }]
+        );
+        setBookingLoading(false);
+      }
+    } catch (error) {
+      console.error('Error sending email:', error);
+      Alert.alert('Error', 'Failed to send booking request. Please try again.');
+      setBookingLoading(false);
+    }
   };
 
   const renderHeader = () => (
@@ -361,79 +503,173 @@ export default function ScanScreen() {
     </TouchableOpacity>
   );
 
+  // ✅ Fixed Booking Modal with working date/time selection
   const renderBookingModal = () => {
     if (!showBooking || !selectedExpert) return null;
 
     return (
-      <View style={styles.modalOverlay}>
-        <TouchableOpacity
-          style={styles.modalBackdrop}
-          activeOpacity={1}
-          onPress={() => setShowBooking(false)}
-        />
-        <View style={styles.modalContent}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>📅 Book Consultation</Text>
-            <TouchableOpacity onPress={() => setShowBooking(false)}>
-              <Ionicons name="close" size={24} color="#1E293B" />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.modalExpertInfo}>
-            <Text style={styles.modalExpertName}>{selectedExpert.name}</Text>
-            <Text style={styles.modalExpertTitle}>{selectedExpert.title}</Text>
-            <Text style={styles.modalExpertSpecialty}>{selectedExpert.specialty}</Text>
-          </View>
-
-          <View style={styles.modalForm}>
-            <Text style={styles.modalLabel}>Select Date</Text>
-            <View style={styles.modalDateRow}>
-              {['Mon 14', 'Tue 15', 'Wed 16', 'Thu 17', 'Fri 18'].map((date) => (
-                <TouchableOpacity key={date} style={styles.modalDateBtn}>
-                  <Text style={styles.modalDateText}>{date}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            <Text style={styles.modalLabel}>Select Time</Text>
-            <View style={styles.modalTimeRow}>
-              {['9:00 AM', '10:00 AM', '11:00 AM', '2:00 PM', '3:00 PM'].map((time) => (
-                <TouchableOpacity key={time} style={styles.modalTimeBtn}>
-                  <Text style={styles.modalTimeText}>{time}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            <Text style={styles.modalLabel}>Notes</Text>
-            <TextInput
-              style={styles.modalInput}
-              placeholder="Describe your health concerns..."
-              placeholderTextColor="#94A3B8"
-              multiline
-              numberOfLines={3}
-            />
-
-            <View style={styles.modalActionRow}>
-              <TouchableOpacity
-                style={[styles.modalActionBtn, styles.modalCancelBtn]}
-                onPress={() => setShowBooking(false)}
-              >
-                <Text style={styles.modalCancelText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.modalActionBtn, styles.modalConfirmBtn]}>
-                <LinearGradient
-                  colors={['#E53935', '#C62828']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.modalBookGradient}
-                >
-                  <Text style={styles.modalBookText}>Confirm Booking</Text>
-                </LinearGradient>
+      <Modal
+        visible={showBooking}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowBooking(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <TouchableOpacity
+            style={styles.modalBackdrop}
+            activeOpacity={1}
+            onPress={() => setShowBooking(false)}
+          />
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>📅 Book Consultation</Text>
+              <TouchableOpacity onPress={() => setShowBooking(false)}>
+                <Ionicons name="close" size={24} color="#1E293B" />
               </TouchableOpacity>
             </View>
+
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <View style={styles.modalExpertInfo}>
+                <Text style={styles.modalExpertName}>{selectedExpert.name}</Text>
+                <Text style={styles.modalExpertTitle}>{selectedExpert.title}</Text>
+                <Text style={styles.modalExpertSpecialty}>{selectedExpert.specialty}</Text>
+                <Text style={styles.modalExpertEmail}>📧 {selectedExpert.email}</Text>
+              </View>
+
+              <View style={styles.modalForm}>
+                {/* ✅ Name Input */}
+                
+
+                {/* ✅ Email Input */}
+                <View>
+                  <Text style={styles.modalLabel}>📧 Your Email *</Text>
+                  <TextInput
+                    style={styles.modalInput}
+                    placeholder="Enter your email"
+                    placeholderTextColor="#94A3B8"
+                    value={bookingEmail}
+                    onChangeText={setBookingEmail}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                  />
+                </View>
+
+                {/* ✅ Phone Input */}
+                <View>
+                  <Text style={styles.modalLabel}>📱 Your Phone</Text>
+                  <TextInput
+                    style={styles.modalInput}
+                    placeholder="Enter your phone number"
+                    placeholderTextColor="#94A3B8"
+                    value={bookingPhone}
+                    onChangeText={setBookingPhone}
+                    keyboardType="phone-pad"
+                  />
+                </View>
+
+                {/* ✅ Date Selection */}
+                <View>
+                  <Text style={styles.modalLabel}>📅 Select Date *</Text>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    style={styles.modalDateScroll}
+                  >
+                    {AVAILABLE_DATES.map((date) => (
+                      <TouchableOpacity
+                        key={date.value}
+                        style={[
+                          styles.modalDateBtn,
+                          selectedDate === date.value && styles.modalDateBtnActive,
+                        ]}
+                        onPress={() => setSelectedDate(date.value)}
+                      >
+                        <Text style={[
+                          styles.modalDateText,
+                          selectedDate === date.value && styles.modalDateTextActive,
+                        ]}>
+                          {date.label}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+
+                {/* ✅ Time Selection */}
+                <View>
+                  <Text style={styles.modalLabel}>⏰ Select Time *</Text>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    style={styles.modalTimeScroll}
+                  >
+                    {AVAILABLE_TIMES.map((time) => (
+                      <TouchableOpacity
+                        key={time}
+                        style={[
+                          styles.modalTimeBtn,
+                          selectedTime === time && styles.modalTimeBtnActive,
+                        ]}
+                        onPress={() => setSelectedTime(time)}
+                      >
+                        <Text style={[
+                          styles.modalTimeText,
+                          selectedTime === time && styles.modalTimeTextActive,
+                        ]}>
+                          {time}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+
+                {/* ✅ Notes Input */}
+                <View>
+                  <Text style={styles.modalLabel}>📝 Health Concerns / Notes</Text>
+                  <TextInput
+                    style={styles.modalTextArea}
+                    placeholder="Describe your health concerns or any specific requirements..."
+                    placeholderTextColor="#94A3B8"
+                    value={bookingNotes}
+                    onChangeText={setBookingNotes}
+                    multiline
+                    numberOfLines={4}
+                    textAlignVertical="top"
+                  />
+                </View>
+
+                {/* ✅ Action Buttons */}
+                <View style={styles.modalActionRow}>
+                  <TouchableOpacity
+                    style={[styles.modalActionBtn, styles.modalCancelBtn]}
+                    onPress={() => setShowBooking(false)}
+                  >
+                    <Text style={styles.modalCancelText}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.modalActionBtn, styles.modalConfirmBtn]}
+                    onPress={sendBookingEmail}
+                    disabled={bookingLoading}
+                  >
+                    <LinearGradient
+                      colors={['#E53935', '#C62828']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={styles.modalBookGradient}
+                    >
+                      {bookingLoading ? (
+                        <ActivityIndicator size="small" color="#FFFFFF" />
+                      ) : (
+                        <Text style={styles.modalBookText}>Confirm Booking</Text>
+                      )}
+                    </LinearGradient>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </ScrollView>
           </View>
         </View>
-      </View>
+      </Modal>
     );
   };
 
@@ -823,12 +1059,9 @@ const styles = StyleSheet.create({
 
   // Modal
   modalOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    flex: 1,
     justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.5)',
   },
   modalBackdrop: {
     position: 'absolute',
@@ -836,14 +1069,13 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.5)',
   },
   modalContent: {
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 20,
-    maxHeight: '85%',
+    maxHeight: '90%',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -876,6 +1108,11 @@ const styles = StyleSheet.create({
     color: '#E53935',
     fontWeight: '500',
   },
+  modalExpertEmail: {
+    fontSize: 12,
+    color: '#64748B',
+    marginTop: 4,
+  },
   modalForm: {
     gap: 12,
   },
@@ -883,40 +1120,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#1E293B',
-  },
-  modalDateRow: {
-    flexDirection: 'row',
-    gap: 8,
-    flexWrap: 'wrap',
-  },
-  modalDateBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-    backgroundColor: '#F8FAFC',
-    borderWidth: 1,
-    borderColor: '#E8ECF0',
-  },
-  modalDateText: {
-    fontSize: 12,
-    color: '#1E293B',
-  },
-  modalTimeRow: {
-    flexDirection: 'row',
-    gap: 8,
-    flexWrap: 'wrap',
-  },
-  modalTimeBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-    backgroundColor: '#F8FAFC',
-    borderWidth: 1,
-    borderColor: '#E8ECF0',
-  },
-  modalTimeText: {
-    fontSize: 12,
-    color: '#1E293B',
+    marginBottom: 4,
   },
   modalInput: {
     borderWidth: 1,
@@ -925,13 +1129,72 @@ const styles = StyleSheet.create({
     padding: 12,
     fontSize: 14,
     color: '#1E293B',
+    backgroundColor: '#FFFFFF',
+  },
+  modalTextArea: {
+    borderWidth: 1,
+    borderColor: '#E8ECF0',
+    borderRadius: 12,
+    padding: 12,
+    fontSize: 14,
+    color: '#1E293B',
     minHeight: 80,
     textAlignVertical: 'top',
+    backgroundColor: '#FFFFFF',
+  },
+  modalDateScroll: {
+    flexDirection: 'row',
+    marginTop: 4,
+  },
+  modalDateBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 12,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E8ECF0',
+    marginRight: 8,
+  },
+  modalDateBtnActive: {
+    backgroundColor: '#E53935',
+    borderColor: '#E53935',
+  },
+  modalDateText: {
+    fontSize: 13,
+    color: '#1E293B',
+  },
+  modalDateTextActive: {
+    color: '#FFFFFF',
+  },
+  modalTimeScroll: {
+    flexDirection: 'row',
+    marginTop: 4,
+  },
+  modalTimeBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 12,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E8ECF0',
+    marginRight: 8,
+  },
+  modalTimeBtnActive: {
+    backgroundColor: '#E53935',
+    borderColor: '#E53935',
+  },
+  modalTimeText: {
+    fontSize: 13,
+    color: '#1E293B',
+  },
+  modalTimeTextActive: {
+    color: '#FFFFFF',
   },
   modalActionRow: {
     flexDirection: 'row',
     gap: 12,
     marginTop: 8,
+    paddingBottom: 8,
   },
   modalActionBtn: {
     flex: 1,
