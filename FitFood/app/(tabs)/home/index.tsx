@@ -36,7 +36,7 @@ export default function HomeScreen() {
       subtitle: 'Connect with health experts',
       icon: '🧑‍⚕️',
       bgColor: '#F0EDFF',
-      route: '/(tabs)/scan',
+      route: '/(tabs)/expert',
     },
     {
       id: 3,
