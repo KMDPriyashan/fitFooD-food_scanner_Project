@@ -117,11 +117,10 @@ export default function ScanScreen() {
   const [showAllDistricts, setShowAllDistricts] = useState(false);
   const [bookingLoading, setBookingLoading] = useState(false);
 
-  // ✅ Booking Form States
+  // Booking Form States
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
   const [bookingNotes, setBookingNotes] = useState('');
-  const [bookingName, setBookingName] = useState('');
   const [bookingEmail, setBookingEmail] = useState('');
   const [bookingPhone, setBookingPhone] = useState('');
 
@@ -208,7 +207,7 @@ export default function ScanScreen() {
 
   const handleBookAppointment = (expert: Expert) => {
     setSelectedExpert(expert);
-    // ✅ Reset booking form
+    // Reset booking form
     setSelectedDate('');
     setSelectedTime('');
     setBookingNotes('');
@@ -217,21 +216,17 @@ export default function ScanScreen() {
     setShowBooking(true);
   };
 
-  // ✅ Send Email via Linking
+  // Send Email via Linking - ✅ Updated: No name validation
   const sendBookingEmail = async () => {
     if (!selectedExpert) return;
 
-    // Validate form
+    // ✅ Only validate email, date, and time (name is optional)
     if (!selectedDate) {
       Alert.alert('Error', 'Please select a date');
       return;
     }
     if (!selectedTime) {
       Alert.alert('Error', 'Please select a time');
-      return;
-    }
-    if (!bookingName.trim()) {
-      Alert.alert('Error', 'Please enter your name');
       return;
     }
     if (!bookingEmail.trim()) {
@@ -252,7 +247,6 @@ I would like to schedule a consultation with you.
 📋 Booking Details:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-👤 Patient Name: ${bookingName}
 📧 Email: ${bookingEmail}
 📱 Phone: ${bookingPhone || 'Not provided'}
 📅 Preferred Date: ${selectedDate}
@@ -267,7 +261,7 @@ ${bookingNotes || 'No additional notes provided.'}
 Please confirm if this time slot is available.
 
 Thank you,
-${bookingName}
+${bookingEmail || 'FitFood App User'}
 
 ---
 📱 Sent via FitFood App
@@ -283,7 +277,7 @@ ${bookingName}
       if (supported) {
         await Linking.openURL(mailtoUrl);
         
-        // Show success message
+        // Show success message and close modal automatically
         Alert.alert(
           '✅ Booking Request Sent',
           `Your consultation request has been sent to ${selectedExpert.name}.\n\nPlease check your email for confirmation.`,
@@ -503,7 +497,7 @@ ${bookingName}
     </TouchableOpacity>
   );
 
-  // ✅ Fixed Booking Modal with working date/time selection
+  // ✅ Fixed Booking Modal - Name field removed
   const renderBookingModal = () => {
     if (!showBooking || !selectedExpert) return null;
 
@@ -537,10 +531,7 @@ ${bookingName}
               </View>
 
               <View style={styles.modalForm}>
-                {/* ✅ Name Input */}
-                
-
-                {/* ✅ Email Input */}
+                {/* ✅ Email Input - Required */}
                 <View>
                   <Text style={styles.modalLabel}>📧 Your Email *</Text>
                   <TextInput
@@ -554,9 +545,9 @@ ${bookingName}
                   />
                 </View>
 
-                {/* ✅ Phone Input */}
+                {/* ✅ Phone Input - Optional */}
                 <View>
-                  <Text style={styles.modalLabel}>📱 Your Phone</Text>
+                  <Text style={styles.modalLabel}>📱 Your Phone (Optional)</Text>
                   <TextInput
                     style={styles.modalInput}
                     placeholder="Enter your phone number"
@@ -567,7 +558,7 @@ ${bookingName}
                   />
                 </View>
 
-                {/* ✅ Date Selection */}
+                {/* ✅ Date Selection - Required */}
                 <View>
                   <Text style={styles.modalLabel}>📅 Select Date *</Text>
                   <ScrollView
@@ -595,7 +586,7 @@ ${bookingName}
                   </ScrollView>
                 </View>
 
-                {/* ✅ Time Selection */}
+                {/* ✅ Time Selection - Required */}
                 <View>
                   <Text style={styles.modalLabel}>⏰ Select Time *</Text>
                   <ScrollView
@@ -623,9 +614,9 @@ ${bookingName}
                   </ScrollView>
                 </View>
 
-                {/* ✅ Notes Input */}
+                {/* ✅ Notes Input - Optional */}
                 <View>
-                  <Text style={styles.modalLabel}>📝 Health Concerns / Notes</Text>
+                  <Text style={styles.modalLabel}>📝 Health Concerns / Notes (Optional)</Text>
                   <TextInput
                     style={styles.modalTextArea}
                     placeholder="Describe your health concerns or any specific requirements..."
