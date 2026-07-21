@@ -9,8 +9,11 @@ export interface Expert {
   district: string;
   experience: string;
   rating: number;
+  description?: string; // ✅ Added - optional
+  profileImage?: string;
   reviews: number;
   phone: string;
+  createdAt?: string;
   email: string;
   whatsapp: string;
   available: boolean;
@@ -183,4 +186,43 @@ export const expertService = {
       return false;
     }
   },
+
+  async createExpert(expertData: Omit<Expert, 'id' | 'rating' | 'reviews'>): Promise<Expert> {
+    try {
+      // Generate a unique ID
+      const id = `expert_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      const newExpert: Expert = {
+        id,
+        ...expertData,
+        rating: 4.5,
+        reviews: 0,
+        createdAt: new Date().toISOString(),
+      };
+
+      // Get existing experts
+      const experts = await this.getAllExperts();
+      experts.push(newExpert);
+      
+      // Save to storage
+      await this.saveExperts(experts);
+      
+      return newExpert;
+    } catch (error) {
+      console.error('Error creating expert:', error);
+      throw error;
+    }
+  },
+
+  async saveExperts(experts: Expert[]): Promise<void> {
+    try {
+      const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+      await AsyncStorage.setItem('experts', JSON.stringify(experts));
+    } catch (error) {
+      console.error('Error saving experts:', error);
+      throw error;
+    }
+  },
+
+
 };
