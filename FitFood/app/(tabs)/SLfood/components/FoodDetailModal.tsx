@@ -135,7 +135,7 @@ const FoodDetailModal = ({ visible, food, onClose }: FoodDetailModalProps) => {
                 )}
                 {food.is_gluten_free && (
                   <View style={[styles.dietaryChip, styles.glutenFreeChip]}>
-                    <Text style={styles.dietaryChipText}>🚫 Gluten-Free</Text>
+                    <Text style={styles.dietaryChipText}>🚫 gluten_free</Text>
                   </View>
                 )}
               </View>

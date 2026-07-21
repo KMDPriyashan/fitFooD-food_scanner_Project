@@ -672,7 +672,7 @@ export default function AddFoodScreen() {
                   onPress={() => setIsGlutenFree(!isGlutenFree)}
                 >
                   <Text style={[styles.dietaryBtnText, isGlutenFree && styles.dietaryBtnTextActive]}>
-                    🚫 Gluten-Free
+                    🚫 gluten_free
                   </Text>
                 </TouchableOpacity>
               </View>

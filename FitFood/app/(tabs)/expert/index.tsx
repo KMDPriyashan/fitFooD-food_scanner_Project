@@ -1403,7 +1403,7 @@ const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
     justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(11, 10, 7, 0.5)',
   },
   modalBackdrop: {
     position: 'absolute',
@@ -1416,7 +1416,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    padding: 20,
+    padding: 10,
     maxHeight: '90%',
   },
   modalHeader: {

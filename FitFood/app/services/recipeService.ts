@@ -63,7 +63,7 @@ const scoreRecipe = (recipe: Recipe, profile: UserProfile): { score: number; mat
         dietaryMatches++;
         matchedCriteria++;
       }
-      else if (pref === 'gluten-free' && recipe.is_gluten_free) {
+      else if (pref === 'gluten_free' && recipe.is_gluten_free) {
         dietaryMatches++;
         matchedCriteria++;
       }
