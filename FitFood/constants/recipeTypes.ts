@@ -38,7 +38,7 @@ export interface Recipe {
 export const DIETARY_OPTIONS = [
   { id: 'vegetarian', label: 'Vegetarian', icon: '🌱' },
   { id: 'vegan', label: 'Vegan', icon: '🌿' },
-  { id: 'gluten-free', label: 'Gluten_Free', icon: '🚫' },
+  { id: 'gluten_free', label: 'Gluten_Free', icon: '🚫' },
   { id: 'keto', label: 'Keto', icon: '🥩' },
   { id: 'low-carb', label: 'LowCarb', icon: '🥑' },
   { id: 'high-protein', label: 'HighProtein', icon: '💪' },
@@ -48,9 +48,9 @@ export const HEALTH_GOALS = [
   { id: 'weight-loss', label: 'Weight Loss', icon: '⚖️' },
   { id: 'muscle-gain', label: 'Muscle Gain', icon: '💪' },
   { id: 'maintenance', label: 'Maintenance', icon: '⚖️' },
-  { id: 'diabetes-management', label: 'Diabetes Management', icon: '🩸' },
+  { id: 'diabetes-management', label: 'Diabetes_Management', icon: '🩸' },
   { id: 'heart-health', label: 'Heart Health', icon: '❤️' },
-  { id: 'general-wellness', label: 'General Wellness', icon: '😊' },
+  { id: 'general-wellness', label: 'General_Wellness', icon: '😊' },
 ];
 
 export const HEALTH_CONDITIONS = [

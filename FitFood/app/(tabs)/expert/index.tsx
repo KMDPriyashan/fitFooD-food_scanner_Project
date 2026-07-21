@@ -13,6 +13,9 @@ import {
   Dimensions,
   ActivityIndicator,
   Modal,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -124,6 +127,23 @@ export default function ScanScreen() {
   const [bookingEmail, setBookingEmail] = useState('');
   const [bookingPhone, setBookingPhone] = useState('');
 
+  // ✅ Become Expert Modal States
+  const [showExpertForm, setShowExpertForm] = useState(false);
+  const [expertFormLoading, setExpertFormLoading] = useState(false);
+  const [expertForm, setExpertForm] = useState({
+    name: '',
+    title: '',
+    specialty: '',
+    qualification: '',
+    experience: '',
+    district: '',
+    phone: '',
+    whatsapp: '',
+    email: '',
+    description: '',
+    profileImage: '',
+  });
+
   // Load experts from database
   useEffect(() => {
     loadExperts();
@@ -207,7 +227,6 @@ export default function ScanScreen() {
 
   const handleBookAppointment = (expert: Expert) => {
     setSelectedExpert(expert);
-    // Reset booking form
     setSelectedDate('');
     setSelectedTime('');
     setBookingNotes('');
@@ -216,11 +235,10 @@ export default function ScanScreen() {
     setShowBooking(true);
   };
 
-  // Send Email via Linking - ✅ Updated: No name validation
+  // ✅ Send Email via Linking
   const sendBookingEmail = async () => {
     if (!selectedExpert) return;
 
-    // ✅ Only validate email, date, and time (name is optional)
     if (!selectedDate) {
       Alert.alert('Error', 'Please select a date');
       return;
@@ -237,7 +255,6 @@ export default function ScanScreen() {
     setBookingLoading(true);
 
     try {
-      // Build email content
       const subject = `📅 Consultation Booking - ${selectedExpert.name}`;
       const body = `
 Dear ${selectedExpert.name},
@@ -268,16 +285,12 @@ ${bookingEmail || 'FitFood App User'}
 🌐 https://fitfood.app
 `;
 
-      // Create mailto URL
       const mailtoUrl = `mailto:${selectedExpert.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 
-      // Open email client
       const supported = await Linking.canOpenURL(mailtoUrl);
       
       if (supported) {
         await Linking.openURL(mailtoUrl);
-        
-        // Show success message and close modal automatically
         Alert.alert(
           '✅ Booking Request Sent',
           `Your consultation request has been sent to ${selectedExpert.name}.\n\nPlease check your email for confirmation.`,
@@ -306,6 +319,329 @@ ${bookingEmail || 'FitFood App User'}
     }
   };
 
+  // ✅ Handle Become Expert Form Submission
+  const handleBecomeExpert = async () => {
+    // Validate form
+    if (!expertForm.name.trim()) {
+      Alert.alert('Error', 'Please enter your full name');
+      return;
+    }
+    if (!expertForm.title.trim()) {
+      Alert.alert('Error', 'Please enter your title');
+      return;
+    }
+    if (!expertForm.specialty.trim()) {
+      Alert.alert('Error', 'Please enter your specialty');
+      return;
+    }
+    if (!expertForm.qualification.trim()) {
+      Alert.alert('Error', 'Please enter your qualification');
+      return;
+    }
+    if (!expertForm.experience.trim()) {
+      Alert.alert('Error', 'Please enter your experience');
+      return;
+    }
+    if (!expertForm.district.trim()) {
+      Alert.alert('Error', 'Please select your district');
+      return;
+    }
+    if (!expertForm.phone.trim()) {
+      Alert.alert('Error', 'Please enter your phone number');
+      return;
+    }
+    if (!expertForm.email.trim()) {
+      Alert.alert('Error', 'Please enter your email');
+      return;
+    }
+
+    setExpertFormLoading(true);
+
+    try {
+      // Create expert object
+      const newExpert: Omit<Expert, 'id' | 'rating' | 'reviews'> = {
+        name: expertForm.name.trim(),
+        title: expertForm.title.trim(),
+        specialty: expertForm.specialty.trim(),
+        qualification: expertForm.qualification.trim(),
+        experience: expertForm.experience.trim(),
+        district: expertForm.district.trim(),
+        phone: expertForm.phone.trim(),
+        whatsapp: expertForm.whatsapp.trim() || expertForm.phone.trim(),
+        email: expertForm.email.trim(),
+        description: expertForm.description.trim(),
+        profileImage: expertForm.profileImage || 'https://via.placeholder.com/100/4CAF50/FFFFFF?text=Expert',
+        available: true,
+        createdAt: new Date().toISOString(),
+      };
+
+      // Save to database
+      const savedExpert = await expertService.createExpert(newExpert);
+      
+      // Add to local state
+      setExperts([savedExpert, ...experts]);
+      setFilteredExperts([savedExpert, ...filteredExperts]);
+
+      Alert.alert(
+        '🎉 Success!',
+        'Your expert profile has been created successfully!',
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              setShowExpertForm(false);
+              setExpertFormLoading(false);
+              // Reset form
+              setExpertForm({
+                name: '',
+                title: '',
+                specialty: '',
+                qualification: '',
+                experience: '',
+                district: '',
+                phone: '',
+                whatsapp: '',
+                email: '',
+                description: '',
+                profileImage: '',
+              });
+            }
+          }
+        ]
+      );
+    } catch (error) {
+      console.error('Error creating expert:', error);
+      Alert.alert('Error', 'Failed to create expert profile. Please try again.');
+      setExpertFormLoading(false);
+    }
+  };
+
+  // ✅ Render Become Expert Button
+  const renderBecomeExpertButton = () => (
+    <TouchableOpacity
+      style={styles.becomeExpertBtn}
+      onPress={() => setShowExpertForm(true)}
+      activeOpacity={0.9}
+    >
+      <LinearGradient
+        colors={['#E53935', '#C62828']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.becomeExpertGradient}
+      >
+        <Ionicons name="person-add-outline" size={22} color="#FFFFFF" />
+        <Text style={styles.becomeExpertText}>Become an Expert</Text>
+        <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
+      </LinearGradient>
+    </TouchableOpacity>
+  );
+
+  // ✅ Render Become Expert Modal
+  const renderExpertFormModal = () => {
+    if (!showExpertForm) return null;
+
+    return (
+      <Modal
+        visible={showExpertForm}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowExpertForm(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <TouchableOpacity
+            style={styles.modalBackdrop}
+            activeOpacity={1}
+            onPress={() => setShowExpertForm(false)}
+          />
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={styles.modalContent}
+          >
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>👨‍⚕️ Become an Expert</Text>
+              <TouchableOpacity onPress={() => setShowExpertForm(false)}>
+                <Ionicons name="close" size={24} color="#1E293B" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <View style={styles.expertFormContainer}>
+                {/* Profile Image Placeholder */}
+                <View style={styles.profileImageContainer}>
+                  <View style={styles.profileImagePlaceholder}>
+                    <Text style={styles.profileImageText}>
+                      {expertForm.name ? expertForm.name.charAt(0).toUpperCase() : '👤'}
+                    </Text>
+                  </View>
+                  <TouchableOpacity style={styles.uploadImageBtn}>
+                    <Text style={styles.uploadImageText}>Upload Photo</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Full Name */}
+                <View style={styles.formGroup}>
+                  <Text style={styles.formLabel}>Full Name *</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    placeholder="Dr. John Doe"
+                    placeholderTextColor="#94A3B8"
+                    value={expertForm.name}
+                    onChangeText={(text) => setExpertForm({ ...expertForm, name: text })}
+                  />
+                </View>
+
+                {/* Title / Designation */}
+                <View style={styles.formGroup}>
+                  <Text style={styles.formLabel}>Title / Designation *</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    placeholder="e.g., Nutritionist, Dietitian"
+                    placeholderTextColor="#94A3B8"
+                    value={expertForm.title}
+                    onChangeText={(text) => setExpertForm({ ...expertForm, title: text })}
+                  />
+                </View>
+
+                {/* Specialty */}
+                <View style={styles.formGroup}>
+                  <Text style={styles.formLabel}>Specialty *</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    placeholder="e.g., Clinical Nutrition, Child Nutrition"
+                    placeholderTextColor="#94A3B8"
+                    value={expertForm.specialty}
+                    onChangeText={(text) => setExpertForm({ ...expertForm, specialty: text })}
+                  />
+                </View>
+
+                {/* Qualification */}
+                <View style={styles.formGroup}>
+                  <Text style={styles.formLabel}>Qualification *</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    placeholder="e.g., BSc in Nutrition, MD"
+                    placeholderTextColor="#94A3B8"
+                    value={expertForm.qualification}
+                    onChangeText={(text) => setExpertForm({ ...expertForm, qualification: text })}
+                  />
+                </View>
+
+                {/* Experience */}
+                <View style={styles.formGroup}>
+                  <Text style={styles.formLabel}>Experience *</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    placeholder="e.g., 5+ years, 10 years experience"
+                    placeholderTextColor="#94A3B8"
+                    value={expertForm.experience}
+                    onChangeText={(text) => setExpertForm({ ...expertForm, experience: text })}
+                  />
+                </View>
+
+                {/* District */}
+                <View style={styles.formGroup}>
+                  <Text style={styles.formLabel}>District *</Text>
+                  <View style={styles.districtPicker}>
+                    <TextInput
+                      style={styles.formInput}
+                      placeholder="Select or enter district"
+                      placeholderTextColor="#94A3B8"
+                      value={expertForm.district}
+                      onChangeText={(text) => setExpertForm({ ...expertForm, district: text })}
+                    />
+                  </View>
+                </View>
+
+                {/* Phone */}
+                <View style={styles.formGroup}>
+                  <Text style={styles.formLabel}>Phone Number *</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    placeholder="0712345678"
+                    placeholderTextColor="#94A3B8"
+                    value={expertForm.phone}
+                    onChangeText={(text) => setExpertForm({ ...expertForm, phone: text })}
+                    keyboardType="phone-pad"
+                  />
+                </View>
+
+                {/* WhatsApp */}
+                <View style={styles.formGroup}>
+                  <Text style={styles.formLabel}>WhatsApp Number</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    placeholder="0712345678 (Same as phone if not provided)"
+                    placeholderTextColor="#94A3B8"
+                    value={expertForm.whatsapp}
+                    onChangeText={(text) => setExpertForm({ ...expertForm, whatsapp: text })}
+                    keyboardType="phone-pad"
+                  />
+                </View>
+
+                {/* Email */}
+                <View style={styles.formGroup}>
+                  <Text style={styles.formLabel}>Email *</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    placeholder="john@example.com"
+                    placeholderTextColor="#94A3B8"
+                    value={expertForm.email}
+                    onChangeText={(text) => setExpertForm({ ...expertForm, email: text })}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                  />
+                </View>
+
+                {/* Description */}
+                <View style={styles.formGroup}>
+                  <Text style={styles.formLabel}>About / Description</Text>
+                  <TextInput
+                    style={[styles.formInput, styles.textArea]}
+                    placeholder="Tell us about your expertise and experience..."
+                    placeholderTextColor="#94A3B8"
+                    value={expertForm.description}
+                    onChangeText={(text) => setExpertForm({ ...expertForm, description: text })}
+                    multiline
+                    numberOfLines={4}
+                    textAlignVertical="top"
+                  />
+                </View>
+
+                {/* Action Buttons */}
+                <View style={styles.modalActionRow}>
+                  <TouchableOpacity
+                    style={[styles.modalActionBtn, styles.modalCancelBtn]}
+                    onPress={() => setShowExpertForm(false)}
+                  >
+                    <Text style={styles.modalCancelText}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.modalActionBtn, styles.modalConfirmBtn]}
+                    onPress={handleBecomeExpert}
+                    disabled={expertFormLoading}
+                  >
+                    <LinearGradient
+                      colors={['#E53935', '#C62828']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={styles.modalBookGradient}
+                    >
+                      {expertFormLoading ? (
+                        <ActivityIndicator size="small" color="#FFFFFF" />
+                      ) : (
+                        <Text style={styles.modalBookText}>Submit Profile</Text>
+                      )}
+                    </LinearGradient>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </ScrollView>
+          </KeyboardAvoidingView>
+        </View>
+      </Modal>
+    );
+  };
+
   const renderHeader = () => (
     <View style={styles.header}>
       <LinearGradient
@@ -324,6 +660,7 @@ ${bookingEmail || 'FitFood App User'}
           </TouchableOpacity>
         </View>
         <Text style={styles.headerSubtitle}>Connect with health experts near you</Text>
+        {renderBecomeExpertButton()}
       </LinearGradient>
     </View>
   );
@@ -457,8 +794,8 @@ ${bookingEmail || 'FitFood App User'}
         </View>
         <View style={styles.expertRating}>
           <Ionicons name="star" size={16} color="#FDCB6E" />
-          <Text style={styles.ratingText}>{expert.rating}</Text>
-          <Text style={styles.reviewText}>({expert.reviews})</Text>
+          <Text style={styles.ratingText}>{expert.rating || 4.5}</Text>
+          <Text style={styles.reviewText}>({expert.reviews || 0})</Text>
         </View>
       </View>
 
@@ -497,7 +834,6 @@ ${bookingEmail || 'FitFood App User'}
     </TouchableOpacity>
   );
 
-  // ✅ Fixed Booking Modal - Name field removed
   const renderBookingModal = () => {
     if (!showBooking || !selectedExpert) return null;
 
@@ -531,7 +867,6 @@ ${bookingEmail || 'FitFood App User'}
               </View>
 
               <View style={styles.modalForm}>
-                {/* ✅ Email Input - Required */}
                 <View>
                   <Text style={styles.modalLabel}>📧 Your Email *</Text>
                   <TextInput
@@ -545,7 +880,6 @@ ${bookingEmail || 'FitFood App User'}
                   />
                 </View>
 
-                {/* ✅ Phone Input - Optional */}
                 <View>
                   <Text style={styles.modalLabel}>📱 Your Phone (Optional)</Text>
                   <TextInput
@@ -558,7 +892,6 @@ ${bookingEmail || 'FitFood App User'}
                   />
                 </View>
 
-                {/* ✅ Date Selection - Required */}
                 <View>
                   <Text style={styles.modalLabel}>📅 Select Date *</Text>
                   <ScrollView
@@ -586,7 +919,6 @@ ${bookingEmail || 'FitFood App User'}
                   </ScrollView>
                 </View>
 
-                {/* ✅ Time Selection - Required */}
                 <View>
                   <Text style={styles.modalLabel}>⏰ Select Time *</Text>
                   <ScrollView
@@ -614,7 +946,6 @@ ${bookingEmail || 'FitFood App User'}
                   </ScrollView>
                 </View>
 
-                {/* ✅ Notes Input - Optional */}
                 <View>
                   <Text style={styles.modalLabel}>📝 Health Concerns / Notes (Optional)</Text>
                   <TextInput
@@ -629,7 +960,6 @@ ${bookingEmail || 'FitFood App User'}
                   />
                 </View>
 
-                {/* ✅ Action Buttons */}
                 <View style={styles.modalActionRow}>
                   <TouchableOpacity
                     style={[styles.modalActionBtn, styles.modalCancelBtn]}
@@ -712,6 +1042,7 @@ ${bookingEmail || 'FitFood App User'}
       </ScrollView>
 
       {renderBookingModal()}
+      {renderExpertFormModal()}
     </SafeAreaView>
   );
 }
@@ -779,6 +1110,26 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.8)',
     marginTop: 4,
     textAlign: 'center',
+  },
+
+  // Become Expert Button
+  becomeExpertBtn: {
+    marginTop: 12,
+    borderRadius: 14,
+    overflow: 'hidden',
+  },
+  becomeExpertGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    gap: 10,
+  },
+  becomeExpertText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
   },
 
   // Filters
@@ -1052,7 +1403,7 @@ const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
     justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(11, 10, 7, 0.5)',
   },
   modalBackdrop: {
     position: 'absolute',
@@ -1065,7 +1416,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    padding: 20,
+    padding: 30,
     maxHeight: '90%',
   },
   modalHeader: {
@@ -1213,5 +1564,65 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '700',
+  },
+
+  // ✅ Expert Form Styles
+  expertFormContainer: {
+    paddingBottom: 20,
+  },
+  formGroup: {
+    marginBottom: 14,
+  },
+  formLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1E293B',
+    marginBottom: 6,
+  },
+  formInput: {
+    borderWidth: 1,
+    borderColor: '#E8ECF0',
+    borderRadius: 12,
+    padding: 12,
+    fontSize: 14,
+    color: '#1E293B',
+    backgroundColor: '#FFFFFF',
+  },
+  textArea: {
+    minHeight: 80,
+    textAlignVertical: 'top',
+  },
+  districtPicker: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  profileImageContainer: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  profileImagePlaceholder: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#E53935',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  profileImageText: {
+    fontSize: 32,
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+  },
+  uploadImageBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: '#F1F5F9',
+  },
+  uploadImageText: {
+    fontSize: 12,
+    color: '#64748B',
+    fontWeight: '500',
   },
 });
