@@ -1416,7 +1416,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    padding: 10,
+    padding: 30,
     maxHeight: '90%',
   },
   modalHeader: {
