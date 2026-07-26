@@ -9,10 +9,11 @@ import {
   SafeAreaView,
   StatusBar,
   Alert,
-  ActivityIndicator, // ✅ Added this import
+  ActivityIndicator,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as Storage from '../../services/meal-planner/storageService';
 import { DailyMealPlan } from '../../../types/meal-planner.types';
 import { getMealTypeIcon } from '../../services/meal-planner/mealPlannerService';
@@ -29,6 +30,7 @@ export default function HistoryScreen() {
     setLoading(true);
     try {
       const plans = await Storage.getMealPlans();
+      // Sort by date descending (newest first)
       const sorted = plans.sort((a, b) => b.date.localeCompare(a.date));
       setHistory(sorted);
     } catch (error) {
@@ -42,11 +44,11 @@ export default function HistoryScreen() {
     const today = new Date().toISOString().split('T')[0];
     const newPlan: DailyMealPlan = {
       ...plan,
-      id: Date.now().toString(),
+      id: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, // ✅ Generate unique ID
       date: today,
       meals: plan.meals.map(meal => ({
         ...meal,
-        id: Date.now().toString() + Math.random().toString(),
+        id: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}_${meal.id}`, // ✅ Generate unique ID for each meal
         completed: false,
       })),
     };
@@ -112,8 +114,8 @@ export default function HistoryScreen() {
               </View>
               
               <View style={styles.historyMeals}>
-                {plan.meals.map((meal) => (
-                  <View key={meal.id} style={styles.historyMeal}>
+                {plan.meals.map((meal, index) => (
+                  <View key={`${plan.id}_meal_${meal.id}_${index}`} style={styles.historyMeal}>
                     <Text style={styles.historyMealIcon}>
                       {getMealTypeIcon(meal.type)}
                     </Text>
@@ -132,8 +134,15 @@ export default function HistoryScreen() {
                 style={styles.copyBtn}
                 onPress={() => handleCopyPlan(plan)}
               >
-                <Ionicons name="copy-outline" size={18} color="#FFFFFF" />
-                <Text style={styles.copyBtnText}>Copy to Today</Text>
+                <LinearGradient
+                  colors={['#E53935', '#C62828']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.copyGradient}
+                >
+                  <Ionicons name="copy-outline" size={18} color="#FFFFFF" />
+                  <Text style={styles.copyBtnText}>Copy to Today</Text>
+                </LinearGradient>
               </TouchableOpacity>
             </View>
           ))
@@ -169,6 +178,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#F1F5F9',
+    paddingTop: 60,
   },
   backBtn: {
     padding: 4,
@@ -260,12 +270,14 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   copyBtn: {
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  copyGradient: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#E53935',
-    paddingVertical: 8,
-    borderRadius: 8,
+    paddingVertical: 10,
     gap: 6,
   },
   copyBtnText: {

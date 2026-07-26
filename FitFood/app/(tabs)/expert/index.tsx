@@ -1346,22 +1346,22 @@ const styles = StyleSheet.create({
 
   // Footer
   connectFooter: {
-    backgroundColor: '#FFF8E1',
+    backgroundColor: '#ff000050',
     padding: 16,
     borderRadius: 16,
     marginTop: 8,
     borderWidth: 1,
-    borderColor: '#FFE0B2',
+    borderColor: '#f80d0d',
   },
   footerText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#F57C00',
+    color: '#000000',
     textAlign: 'center',
   },
   footerSubText: {
     fontSize: 12,
-    color: '#64748B',
+    color: '#ffffff',
     textAlign: 'center',
     marginTop: 4,
   },

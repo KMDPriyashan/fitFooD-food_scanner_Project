@@ -10,12 +10,12 @@ import {
   StatusBar,
   Alert,
   Share,
-  ActivityIndicator, // ✅ Added this import
+  ActivityIndicator,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as Storage from '../../services/meal-planner/storageService'; // ✅ Changed import
+import * as Storage from '../../services/meal-planner/storageService';
 import { ShoppingItem } from '../../../types/meal-planner.types';
 
 const CATEGORY_ICONS: Record<string, string> = {
@@ -49,10 +49,8 @@ export default function ShoppingListScreen() {
   const loadItems = async () => {
     setLoading(true);
     try {
-      // ✅ FIXED: Use Storage.getShoppingList
       const savedItems = await Storage.getShoppingList();
       if (savedItems.length === 0) {
-        // Generate from meal plan
         const generated = await generateShoppingListFromPlan();
         setItems(generated);
       } else {
@@ -65,7 +63,6 @@ export default function ShoppingListScreen() {
     }
   };
 
-  // Helper function to generate shopping list from meal plan
   const generateShoppingListFromPlan = async (): Promise<ShoppingItem[]> => {
     const plan = await Storage.getTodayMealPlan();
     const items: ShoppingItem[] = [];
@@ -90,7 +87,7 @@ export default function ShoppingListScreen() {
     
     foodMap.forEach((value, key) => {
       items.push({
-        id: Date.now().toString() + Math.random().toString(),
+        id: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}_${key}`, // ✅ Generate unique ID
         name: key,
         category: getCategoryForFood(key),
         quantity: value.quantity,
@@ -246,7 +243,7 @@ export default function ShoppingListScreen() {
 
             {categoryItems.map((item) => (
               <TouchableOpacity
-                key={item.id}
+                key={item.id} // ✅ Using unique ID
                 style={[styles.itemRow, item.checked && styles.itemRowChecked]}
                 onPress={() => toggleItem(item.id)}
               >
@@ -314,6 +311,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#F1F5F9',
+    paddingTop: 60,
   },
   backBtn: {
     padding: 4,
