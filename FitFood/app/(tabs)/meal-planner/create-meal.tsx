@@ -35,6 +35,16 @@ const MEAL_TYPES = [
   { value: 'snack', label: '🍿 Snack' },
 ];
 
+// ✅ Snack specific fields
+const SNACK_TYPES = [
+  { value: 'healthy', label: '🥗 Healthy Snack' },
+  { value: 'protein', label: '💪 Protein Snack' },
+  { value: 'fruit', label: '🍎 Fruit Snack' },
+  { value: 'nut', label: '🥜 Nut Snack' },
+  { value: 'smoothie', label: '🥤 Smoothie' },
+  { value: 'other', label: '📦 Other' },
+];
+
 export default function CreateMealScreen() {
   const params = useLocalSearchParams();
   const editMealId = params.mealId as string;
@@ -58,16 +68,20 @@ export default function CreateMealScreen() {
   const [loading, setLoading] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
 
+  // ✅ Snack specific states
+  const [snackType, setSnackType] = useState('healthy');
+  const [servingSize, setServingSize] = useState('');
+  const [isGlutenFree, setIsGlutenFree] = useState(false);
+  const [isVegan, setIsVegan] = useState(false);
+  const [isSugarFree, setIsSugarFree] = useState(false);
+
   // ✅ Reset form when entering the screen (for new meal)
   useFocusEffect(
     React.useCallback(() => {
-      // Only reset if not in edit mode
       if (!editMealId && !templateId) {
         resetForm();
       }
-      return () => {
-        // Cleanup if needed
-      };
+      return () => {};
     }, [editMealId, templateId])
   );
 
@@ -101,6 +115,12 @@ export default function CreateMealScreen() {
     setIsFavorite(false);
     setShowTemplates(false);
     setIsEditMode(false);
+    // ✅ Reset snack fields
+    setSnackType('healthy');
+    setServingSize('');
+    setIsGlutenFree(false);
+    setIsVegan(false);
+    setIsSugarFree(false);
   };
 
   const loadMealForEdit = async () => {
@@ -121,6 +141,15 @@ export default function CreateMealScreen() {
         setRecipe(meal.recipe || '');
         setIsFavorite(meal.isFavorite || false);
         setIsEditMode(true);
+        
+        // ✅ Load snack specific data if available
+        if (meal.type === 'snack') {
+          setSnackType((meal as any).snackType || 'healthy');
+          setServingSize((meal as any).servingSize || '');
+          setIsGlutenFree((meal as any).isGlutenFree || false);
+          setIsVegan((meal as any).isVegan || false);
+          setIsSugarFree((meal as any).isSugarFree || false);
+        }
       }
     } catch (error) {
       console.error('Error loading meal:', error);
@@ -183,6 +212,7 @@ export default function CreateMealScreen() {
     // ✅ Generate unique ID
     const uniqueId = editMealId || `${Date.now()}_${generateUUID()}`;
 
+    // ✅ Base meal object
     const meal: Meal = {
       id: uniqueId,
       name: name.trim(),
@@ -198,6 +228,15 @@ export default function CreateMealScreen() {
       isFavorite: isFavorite,
       completed: false,
     };
+
+    // ✅ Add snack specific fields if type is snack
+    if (type === 'snack') {
+      (meal as any).snackType = snackType;
+      (meal as any).servingSize = servingSize;
+      (meal as any).isGlutenFree = isGlutenFree;
+      (meal as any).isVegan = isVegan;
+      (meal as any).isSugarFree = isSugarFree;
+    }
 
     try {
       if (editMealId) {
@@ -217,9 +256,7 @@ export default function CreateMealScreen() {
           {
             text: 'OK',
             onPress: () => {
-              // ✅ Reset form before navigating back
               resetForm();
-              // ✅ Navigate back to meal planner with refresh flag
               router.push('/(tabs)/meal-planner');
             }
           }
@@ -236,6 +273,95 @@ export default function CreateMealScreen() {
     resetForm();
     router.back();
   };
+
+  // ✅ Render snack specific form fields
+  const renderSnackFields = () => (
+    <View style={styles.snackContainer}>
+      {/* Snack Type */}
+      <View style={styles.section}>
+        <Text style={styles.label}>Snack Type</Text>
+        <View style={styles.typeContainer}>
+          {SNACK_TYPES.map(({ value, label }) => (
+            <TouchableOpacity
+              key={value}
+              style={[
+                styles.typeBtn,
+                snackType === value && { backgroundColor: '#FF9800' },
+              ]}
+              onPress={() => setSnackType(value)}
+            >
+              <Text style={[styles.typeBtnText, snackType === value && styles.typeBtnTextActive]}>
+                {label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+
+      {/* Serving Size */}
+      <View style={styles.section}>
+        <Text style={styles.label}>Serving Size</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="e.g., 1 cup, 100g, 2 pieces"
+          placeholderTextColor="#94A3B8"
+          value={servingSize}
+          onChangeText={setServingSize}
+        />
+      </View>
+
+      {/* Dietary Preferences */}
+      <View style={styles.section}>
+        <Text style={styles.label}>Dietary Preferences</Text>
+        <View style={styles.dietaryRow}>
+          <TouchableOpacity
+            style={[
+              styles.dietaryBtn,
+              isGlutenFree && styles.dietaryBtnActive,
+            ]}
+            onPress={() => setIsGlutenFree(!isGlutenFree)}
+          >
+            <Text style={[
+              styles.dietaryBtnText,
+              isGlutenFree && styles.dietaryBtnTextActive,
+            ]}>
+              🚫 Gluten Free
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.dietaryBtn,
+              isVegan && styles.dietaryBtnActive,
+            ]}
+            onPress={() => setIsVegan(!isVegan)}
+          >
+            <Text style={[
+              styles.dietaryBtnText,
+              isVegan && styles.dietaryBtnTextActive,
+            ]}>
+              🌱 Vegan
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.dietaryBtn,
+              isSugarFree && styles.dietaryBtnActive,
+            ]}
+            onPress={() => setIsSugarFree(!isSugarFree)}
+          >
+            <Text style={[
+              styles.dietaryBtnText,
+              isSugarFree && styles.dietaryBtnTextActive,
+            ]}>
+              🍭 Sugar Free
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <View style={styles.divider} />
+    </View>
+  );
 
   if (loading) {
     return (
@@ -281,6 +407,9 @@ export default function CreateMealScreen() {
             ))}
           </View>
         </View>
+
+        {/* ✅ Snack specific fields - only show when snack is selected */}
+        {type === 'snack' && renderSnackFields()}
 
         {/* Name */}
         <View style={styles.section}>
@@ -664,5 +793,44 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: '#E53935',
+  },
+
+  // ✅ Snack specific styles
+  snackContainer: {
+    backgroundColor: '#FFF8E1',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#FFE0B2',
+  },
+  dietaryRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  dietaryBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E8ECF0',
+  },
+  dietaryBtnActive: {
+    backgroundColor: '#FF9800',
+    borderColor: '#FF9800',
+  },
+  dietaryBtnText: {
+    fontSize: 12,
+    color: '#64748B',
+  },
+  dietaryBtnTextActive: {
+    color: '#FFFFFF',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#E8ECF0',
+    marginVertical: 8,
   },
 });
