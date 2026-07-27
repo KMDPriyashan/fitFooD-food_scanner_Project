@@ -13,7 +13,7 @@ import {
   Switch,
   ActivityIndicator,
 } from 'react-native';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as MealPlannerService from '../../services/meal-planner/mealPlannerService';
@@ -21,13 +21,11 @@ import { getTemplatesByType } from '../../services/meal-planner/mealTemplates';
 import { Meal, MealTemplate } from '../../../types/meal-planner.types';
 import { getMealTypeColor, getMealTypeIcon } from '../../services/meal-planner/mealPlannerService';
 
-// ✅ Generate UUID locally instead of importing
+// ✅ Generate unique UUID with timestamp
 const generateUUID = (): string => {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    const r = Math.random() * 16 | 0;
-    const v = c === 'x' ? r : (r & 0x3 | 0x8);
-    return v.toString(16);
-  });
+  const timestamp = Date.now().toString(36);
+  const random = Math.random().toString(36).substr(2, 9);
+  return `${timestamp}_${random}`;
 };
 
 const MEAL_TYPES = [
@@ -42,6 +40,7 @@ export default function CreateMealScreen() {
   const editMealId = params.mealId as string;
   const templateId = params.templateId as string;
 
+  // ✅ Form States
   const [name, setName] = useState('');
   const [type, setType] = useState<'breakfast' | 'lunch' | 'dinner' | 'snack'>('breakfast');
   const [time, setTime] = useState('12:00');
@@ -57,15 +56,52 @@ export default function CreateMealScreen() {
   const [showTemplates, setShowTemplates] = useState(false);
   const [templates, setTemplates] = useState<MealTemplate[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
 
+  // ✅ Reset form when entering the screen (for new meal)
+  useFocusEffect(
+    React.useCallback(() => {
+      // Only reset if not in edit mode
+      if (!editMealId && !templateId) {
+        resetForm();
+      }
+      return () => {
+        // Cleanup if needed
+      };
+    }, [editMealId, templateId])
+  );
+
+  // ✅ Load data on mount
   useEffect(() => {
     if (editMealId) {
+      setIsEditMode(true);
       loadMealForEdit();
     } else if (templateId) {
       loadTemplate();
+    } else {
+      setIsEditMode(false);
+      resetForm();
     }
     loadTemplates();
-  }, []);
+  }, [editMealId, templateId]);
+
+  // ✅ Reset form to initial state
+  const resetForm = () => {
+    setName('');
+    setType('breakfast');
+    setTime('12:00');
+    setFoods([]);
+    setFoodInput('');
+    setCalories('');
+    setProtein('');
+    setCarbs('');
+    setFat('');
+    setPrepTime('');
+    setRecipe('');
+    setIsFavorite(false);
+    setShowTemplates(false);
+    setIsEditMode(false);
+  };
 
   const loadMealForEdit = async () => {
     setLoading(true);
@@ -84,6 +120,7 @@ export default function CreateMealScreen() {
         setPrepTime(meal.preparationTime?.toString() || '');
         setRecipe(meal.recipe || '');
         setIsFavorite(meal.isFavorite || false);
+        setIsEditMode(true);
       }
     } catch (error) {
       console.error('Error loading meal:', error);
@@ -131,6 +168,7 @@ export default function CreateMealScreen() {
     setFoods(newFoods);
   };
 
+  // ✅ Handle Save with navigation and refresh
   const handleSave = async () => {
     if (!name.trim()) {
       Alert.alert('Error', 'Please enter a meal name');
@@ -142,9 +180,11 @@ export default function CreateMealScreen() {
       return;
     }
 
-    // ✅ FIXED: Create meal with correct structure
+    // ✅ Generate unique ID
+    const uniqueId = editMealId || `${Date.now()}_${generateUUID()}`;
+
     const meal: Meal = {
-      id: editMealId || generateUUID(),
+      id: uniqueId,
       name: name.trim(),
       type: type,
       time: time,
@@ -170,12 +210,31 @@ export default function CreateMealScreen() {
         await MealPlannerService.toggleFavorite(meal);
       }
 
-      Alert.alert('✅ Success', 'Meal saved successfully!');
-      router.back();
+      Alert.alert(
+        '✅ Success!',
+        `${meal.name} has been ${editMealId ? 'updated' : 'added'} successfully!`,
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              // ✅ Reset form before navigating back
+              resetForm();
+              // ✅ Navigate back to meal planner with refresh flag
+              router.back();
+            }
+          }
+        ]
+      );
     } catch (error) {
       console.error('Error saving meal:', error);
       Alert.alert('Error', 'Failed to save meal');
     }
+  };
+
+  // ✅ Handle Cancel - Reset and go back
+  const handleCancel = () => {
+    resetForm();
+    router.back();
   };
 
   if (loading) {
@@ -192,7 +251,7 @@ export default function CreateMealScreen() {
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
       
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+        <TouchableOpacity style={styles.backBtn} onPress={handleCancel}>
           <Ionicons name="arrow-back" size={24} color="#1E293B" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{editMealId ? 'Edit Meal' : 'Add Meal'}</Text>
@@ -265,7 +324,7 @@ export default function CreateMealScreen() {
           </View>
           <View style={styles.foodTags}>
             {foods.map((food, index) => (
-              <View key={index} style={styles.foodTag}>
+              <View key={`food_${food}_${index}`} style={styles.foodTag}>
                 <Text style={styles.foodTagText}>{food}</Text>
                 <TouchableOpacity onPress={() => handleRemoveFood(index)}>
                   <Ionicons name="close-circle" size={18} color="#F44336" />
@@ -439,7 +498,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#F1F5F9',
-    marginTop: 50,
+    paddingTop: 60,
   },
   backBtn: {
     padding: 4,

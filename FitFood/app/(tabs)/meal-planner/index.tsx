@@ -1,5 +1,5 @@
 // app/(tabs)/meal-planner/index.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -11,9 +11,9 @@ import {
   RefreshControl,
   Alert,
   Dimensions,
-    ActivityIndicator,
+  ActivityIndicator,
 } from 'react-native';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as MealPlannerService from '../../services/meal-planner/mealPlannerService';
@@ -28,9 +28,18 @@ export default function MealPlannerScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [progress, setProgress] = useState<any>(null);
 
+  // ✅ Load data on mount
   useEffect(() => {
     loadData();
   }, []);
+
+  // ✅ Auto refresh when screen comes into focus (after returning from create-meal)
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+      return () => {};
+    }, [])
+  );
 
   const loadData = async () => {
     setLoading(true);
@@ -94,11 +103,13 @@ export default function MealPlannerScreen() {
     );
   };
 
-  const renderMealCard = (meal: Meal) => (
+  // ✅ Render meal card with unique key
+  const renderMealCard = (meal: Meal, index: number) => (
     <TouchableOpacity
-      key={meal.id}
+      key={`${meal.id}_${index}`}
       style={[styles.mealCard, meal.completed && styles.mealCardCompleted]}
       onPress={() => handleViewMeal(meal)}
+      activeOpacity={0.7}
     >
       <View style={styles.mealHeader}>
         <View style={[styles.mealTypeDot, { backgroundColor: getMealTypeColor(meal.type) }]} />
@@ -107,13 +118,27 @@ export default function MealPlannerScreen() {
       </View>
       
       <View style={styles.mealBody}>
-        <Text style={styles.mealName}>{meal.name}</Text>
-        <Text style={styles.mealFoods}>{meal.foods.join(', ')}</Text>
+        <Text style={[styles.mealName, meal.completed && styles.mealNameCompleted]}>
+          {meal.name}
+        </Text>
+        <Text style={styles.mealFoods}>{meal.foods.join(' • ')}</Text>
         <View style={styles.mealNutrition}>
-          <Text style={styles.mealCalories}>🔥 {meal.calories} kcal</Text>
-          <Text style={styles.mealMacro}>💪 {meal.protein}g</Text>
-          <Text style={styles.mealMacro}>🌾 {meal.carbs}g</Text>
-          <Text style={styles.mealMacro}>🧈 {meal.fat}g</Text>
+          <View style={styles.nutritionItem}>
+            <Text style={styles.mealCalories}>🔥 {meal.calories}</Text>
+            <Text style={styles.nutritionLabel}>kcal</Text>
+          </View>
+          <View style={styles.nutritionItem}>
+            <Text style={styles.mealMacro}>💪 {meal.protein}g</Text>
+            <Text style={styles.nutritionLabel}>Protein</Text>
+          </View>
+          <View style={styles.nutritionItem}>
+            <Text style={styles.mealMacro}>🌾 {meal.carbs}g</Text>
+            <Text style={styles.nutritionLabel}>Carbs</Text>
+          </View>
+          <View style={styles.nutritionItem}>
+            <Text style={styles.mealMacro}>🧈 {meal.fat}g</Text>
+            <Text style={styles.nutritionLabel}>Fat</Text>
+          </View>
         </View>
       </View>
 
@@ -127,6 +152,9 @@ export default function MealPlannerScreen() {
             size={22}
             color={meal.completed ? '#4CAF50' : '#999'}
           />
+          <Text style={[styles.completeBtnText, meal.completed && styles.completeBtnTextActive]}>
+            {meal.completed ? 'Done' : 'Mark Done'}
+          </Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.deleteBtn}
@@ -138,14 +166,21 @@ export default function MealPlannerScreen() {
     </TouchableOpacity>
   );
 
+  // ✅ Render empty meal slot with unique key
   const renderEmptyMealSlot = (type: string, icon: string) => (
     <TouchableOpacity
+      key={`empty_${type}`}
       style={styles.emptySlot}
       onPress={handleAddMeal}
+      activeOpacity={0.8}
     >
-      <Text style={styles.emptySlotIcon}>{icon}</Text>
-      <Text style={styles.emptySlotText}>Add {type}</Text>
-      <Ionicons name="add-circle-outline" size={24} color="#E53935" />
+      <View style={styles.emptySlotContent}>
+        <Text style={styles.emptySlotIcon}>{icon}</Text>
+        <Text style={styles.emptySlotText}>Add {type}</Text>
+        <View style={styles.emptySlotAddBtn}>
+          <Ionicons name="add" size={18} color="#FFFFFF" />
+        </View>
+      </View>
     </TouchableOpacity>
   );
 
@@ -165,9 +200,14 @@ export default function MealPlannerScreen() {
     { key: 'snack', label: 'Snack', icon: '🍿' },
   ];
 
+  // Calculate completion percentage
+  const totalMeals = plan?.meals.length || 0;
+  const completedMeals = plan?.meals.filter(m => m.completed).length || 0;
+  const completionPercentage = totalMeals > 0 ? Math.round((completedMeals / totalMeals) * 100) : 0;
+
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F8FAFC" />
+      <StatusBar barStyle="light-content" backgroundColor="#E53935" />
       
       <ScrollView
         style={styles.container}
@@ -175,23 +215,50 @@ export default function MealPlannerScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>🍽️ Meal Planner</Text>
-          <Text style={styles.headerSubtitle}>Plan your meals for today</Text>
-        </View>
+        {/* ✅ Redesigned Header with Gradient */}
+        <LinearGradient
+          colors={['#E53935', '#C62828']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.headerGradient}
+        >
+          <View style={styles.headerContent}>
+            <View>
+              <Text style={styles.headerTitle}>🍽️ Meal Planner</Text>
+              <Text style={styles.headerSubtitle}>Plan your meals for today</Text>
+            </View>
+          </View>
+
+          {/* Progress Summary */}
+          <View style={styles.progressSummary}>
+            <View style={styles.progressSummaryItem}>
+              <Text style={styles.progressSummaryNumber}>{completedMeals}</Text>
+              <Text style={styles.progressSummaryLabel}>Completed</Text>
+            </View>
+            <View style={styles.progressSummaryDivider} />
+            <View style={styles.progressSummaryItem}>
+              <Text style={styles.progressSummaryNumber}>{totalMeals}</Text>
+              <Text style={styles.progressSummaryLabel}>Total Meals</Text>
+            </View>
+            <View style={styles.progressSummaryDivider} />
+            <View style={styles.progressSummaryItem}>
+              <Text style={styles.progressSummaryNumber}>{completionPercentage}%</Text>
+              <Text style={styles.progressSummaryLabel}>Done</Text>
+            </View>
+          </View>
+        </LinearGradient>
 
         {/* Progress Section */}
         {progress && (
           <View style={styles.progressContainer}>
             <LinearGradient
-              colors={['#E53935', '#C62828']}
+              colors={['#FFF5F5', '#FFEBEE']}
               start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.progressGradient}
+              end={{ x: 1, y: 1 }}
+              style={styles.progressCard}
             >
               <View style={styles.progressHeader}>
-                <Text style={styles.progressTitle}>Today's Progress</Text>
+                <Text style={styles.progressTitle}>📊 Today's Progress</Text>
                 <Text style={styles.progressCalories}>
                   {plan?.totalCalories || 0} / {plan?.caloriesGoal || 2000} kcal
                 </Text>
@@ -202,7 +269,10 @@ export default function MealPlannerScreen() {
                 <View
                   style={[
                     styles.progressBar,
-                    { width: `${Math.min((plan?.totalCalories || 0) / (plan?.caloriesGoal || 2000) * 100, 100)}%` },
+                    { 
+                      width: `${Math.min((plan?.totalCalories || 0) / (plan?.caloriesGoal || 2000) * 100, 100)}%`,
+                      backgroundColor: (plan?.totalCalories || 0) / (plan?.caloriesGoal || 2000) > 0.8 ? '#4CAF50' : '#E53935'
+                    },
                   ]}
                 />
               </View>
@@ -210,16 +280,25 @@ export default function MealPlannerScreen() {
               {/* Macro Summary */}
               <View style={styles.macroRow}>
                 <View style={styles.macroItem}>
+                  <View style={[styles.macroIcon, { backgroundColor: '#FF6B6B' }]}>
+                    <Text style={styles.macroIconText}>💪</Text>
+                  </View>
                   <Text style={styles.macroValue}>{plan?.totalProtein || 0}g</Text>
                   <Text style={styles.macroLabel}>Protein</Text>
                 </View>
                 <View style={styles.macroDivider} />
                 <View style={styles.macroItem}>
+                  <View style={[styles.macroIcon, { backgroundColor: '#FFA94D' }]}>
+                    <Text style={styles.macroIconText}>🌾</Text>
+                  </View>
                   <Text style={styles.macroValue}>{plan?.totalCarbs || 0}g</Text>
                   <Text style={styles.macroLabel}>Carbs</Text>
                 </View>
                 <View style={styles.macroDivider} />
                 <View style={styles.macroItem}>
+                  <View style={[styles.macroIcon, { backgroundColor: '#9775FA' }]}>
+                    <Text style={styles.macroIconText}>🧈</Text>
+                  </View>
                   <Text style={styles.macroValue}>{plan?.totalFat || 0}g</Text>
                   <Text style={styles.macroLabel}>Fat</Text>
                 </View>
@@ -233,18 +312,30 @@ export default function MealPlannerScreen() {
           <View style={styles.mealsHeader}>
             <Text style={styles.mealsTitle}>Today's Meals</Text>
             <TouchableOpacity style={styles.addMealBtn} onPress={handleAddMeal}>
-              <Ionicons name="add" size={20} color="#FFFFFF" />
-              <Text style={styles.addMealBtnText}>Add Meal</Text>
+              <LinearGradient
+                colors={['#E53935', '#C62828']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.addMealGradient}
+              >
+                <Ionicons name="add" size={18} color="#FFFFFF" />
+                <Text style={styles.addMealBtnText}>Add Meal</Text>
+              </LinearGradient>
             </TouchableOpacity>
           </View>
 
           {mealTypes.map(({ key, label, icon }) => {
             const meals = plan?.meals.filter(m => m.type === key) || [];
             return (
-              <View key={key} style={styles.mealSection}>
-                <Text style={styles.mealSectionTitle}>{icon} {label}</Text>
+              <View key={`section_${key}`} style={styles.mealSection}>
+                <View style={styles.mealSectionHeader}>
+                  <Text style={styles.mealSectionTitle}>{icon} {label}</Text>
+                  <View style={styles.mealSectionCount}>
+                    <Text style={styles.mealSectionCountText}>{meals.length}</Text>
+                  </View>
+                </View>
                 {meals.length > 0 ? (
-                  meals.map(renderMealCard)
+                  meals.map((meal, index) => renderMealCard(meal, index))
                 ) : (
                   renderEmptyMealSlot(label, icon)
                 )}
@@ -259,33 +350,63 @@ export default function MealPlannerScreen() {
             style={styles.quickActionBtn}
             onPress={() => router.push('/(tabs)/meal-planner/shopping-list')}
           >
-            <Ionicons name="list-outline" size={24} color="#E53935" />
-            <Text style={styles.quickActionText}>Shopping List</Text>
+            <LinearGradient
+              colors={['#FFF5F5', '#FFEBEE']}
+              style={styles.quickActionGradient}
+            >
+              <View style={[styles.quickActionIcon, { backgroundColor: '#FFEBEE' }]}>
+                <Ionicons name="list-outline" size={22} color="#E53935" />
+              </View>
+              <Text style={styles.quickActionText}>Shopping List</Text>
+            </LinearGradient>
           </TouchableOpacity>
+          
           <TouchableOpacity
             style={styles.quickActionBtn}
             onPress={() => router.push('/(tabs)/meal-planner/favorites')}
           >
-            <Ionicons name="heart-outline" size={24} color="#E53935" />
-            <Text style={styles.quickActionText}>Favorites</Text>
+            <LinearGradient
+              colors={['#FFF3E0', '#FFE0B2']}
+              style={styles.quickActionGradient}
+            >
+              <View style={[styles.quickActionIcon, { backgroundColor: '#FFF3E0' }]}>
+                <Ionicons name="heart-outline" size={22} color="#FF9800" />
+              </View>
+              <Text style={styles.quickActionText}>Favorites</Text>
+            </LinearGradient>
           </TouchableOpacity>
+          
           <TouchableOpacity
             style={styles.quickActionBtn}
             onPress={() => router.push('/(tabs)/meal-planner/progress')}
           >
-            <Ionicons name="stats-chart-outline" size={24} color="#E53935" />
-            <Text style={styles.quickActionText}>Progress</Text>
+            <LinearGradient
+              colors={['#E8F5E9', '#C8E6C9']}
+              style={styles.quickActionGradient}
+            >
+              <View style={[styles.quickActionIcon, { backgroundColor: '#E8F5E9' }]}>
+                <Ionicons name="stats-chart-outline" size={22} color="#4CAF50" />
+              </View>
+              <Text style={styles.quickActionText}>Progress</Text>
+            </LinearGradient>
           </TouchableOpacity>
+          
           <TouchableOpacity
             style={styles.quickActionBtn}
             onPress={() => router.push('/(tabs)/meal-planner/history')}
           >
-            <Ionicons name="time-outline" size={24} color="#E53935" />
-            <Text style={styles.quickActionText}>History</Text>
+            <LinearGradient
+              colors={['#E3F2FD', '#BBDEFB']}
+              style={styles.quickActionGradient}
+            >
+              <View style={[styles.quickActionIcon, { backgroundColor: '#E3F2FD' }]}>
+                <Ionicons name="time-outline" size={22} color="#2196F3" />
+              </View>
+              <Text style={styles.quickActionText}>History</Text>
+            </LinearGradient>
           </TouchableOpacity>
         </View>
 
-        {/* Bottom Padding */}
         <View style={{ height: 20 }} />
       </ScrollView>
     </SafeAreaView>
@@ -299,8 +420,6 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: 16,
   },
   loadingContainer: {
     flex: 1,
@@ -314,30 +433,70 @@ const styles = StyleSheet.create({
     color: '#64748B',
   },
 
-  // Header
-  header: {
-    marginBottom: 20,
-    marginTop: 65,
+  // ✅ Header
+  headerGradient: {
+    paddingHorizontal: 20,
+    paddingTop: 55,
+    paddingBottom: 20,
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: '700',
-    color: '#1E293B',
+    color: '#FFFFFF',
   },
   headerSubtitle: {
-    fontSize: 14,
-    color: '#64748B',
-    marginTop: 4,
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.8)',
+    marginTop: 2,
   },
 
-  // Progress
+  // Progress Summary
+  progressSummary: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    marginTop: 16,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderRadius: 14,
+    paddingVertical: 12,
+  },
+  progressSummaryItem: {
+    alignItems: 'center',
+  },
+  progressSummaryNumber: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  progressSummaryLabel: {
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.8)',
+    marginTop: 2,
+  },
+  progressSummaryDivider: {
+    width: 1,
+    height: 30,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+  },
+
+  // Progress Card
   progressContainer: {
+    marginHorizontal: 16,
+    marginTop: 16,
     borderRadius: 16,
     overflow: 'hidden',
-    marginBottom: 20,
   },
-  progressGradient: {
+  progressCard: {
     padding: 16,
+    borderWidth: 1,
+    borderColor: '#FFEBEE',
   },
   progressHeader: {
     flexDirection: 'row',
@@ -345,24 +504,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   progressTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: '#1E293B',
   },
   progressCalories: {
     fontSize: 14,
-    color: 'rgba(255,255,255,0.9)',
+    fontWeight: '700',
+    color: '#E53935',
   },
   progressBarContainer: {
     height: 8,
-    backgroundColor: 'rgba(255,255,255,0.3)',
+    backgroundColor: '#F5F5F5',
     borderRadius: 4,
     marginTop: 12,
     marginBottom: 12,
+    overflow: 'hidden',
   },
   progressBar: {
     height: '100%',
-    backgroundColor: '#FFFFFF',
     borderRadius: 4,
   },
   macroRow: {
@@ -373,25 +533,37 @@ const styles = StyleSheet.create({
   macroItem: {
     alignItems: 'center',
   },
+  macroIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  macroIconText: {
+    fontSize: 14,
+  },
   macroValue: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: '#1E293B',
   },
   macroLabel: {
-    fontSize: 11,
-    color: 'rgba(255,255,255,0.8)',
-    marginTop: 2,
+    fontSize: 10,
+    color: '#94A3B8',
+    marginTop: 1,
   },
   macroDivider: {
     width: 1,
     height: 30,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: '#E8ECF0',
   },
 
-  // Meals
+  // Meals Section
   mealsContainer: {
-    flex: 1,
+    paddingHorizontal: 16,
+    marginTop: 16,
   },
   mealsHeader: {
     flexDirection: 'row',
@@ -405,12 +577,14 @@ const styles = StyleSheet.create({
     color: '#1E293B',
   },
   addMealBtn: {
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  addMealGradient: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#E53935',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
     gap: 4,
   },
   addMealBtnText: {
@@ -421,28 +595,47 @@ const styles = StyleSheet.create({
   mealSection: {
     marginBottom: 16,
   },
+  mealSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    gap: 8,
+  },
   mealSectionTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
     color: '#1E293B',
-    marginBottom: 8,
+  },
+  mealSectionCount: {
+    backgroundColor: '#F1F5F9',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  mealSectionCountText: {
+    fontSize: 11,
+    color: '#64748B',
+    fontWeight: '500',
   },
 
   // Meal Card
   mealCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 8,
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
     shadowRadius: 4,
     elevation: 2,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
   },
   mealCardCompleted: {
     opacity: 0.7,
     backgroundColor: '#F5F5F5',
+    borderColor: '#C8E6C9',
   },
   mealHeader: {
     flexDirection: 'row',
@@ -473,6 +666,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#1E293B',
   },
+  mealNameCompleted: {
+    textDecorationLine: 'line-through',
+    color: '#94A3B8',
+  },
   mealFoods: {
     fontSize: 13,
     color: '#64748B',
@@ -480,78 +677,125 @@ const styles = StyleSheet.create({
   },
   mealNutrition: {
     flexDirection: 'row',
-    marginTop: 6,
+    marginTop: 8,
     gap: 12,
+  },
+  nutritionItem: {
+    alignItems: 'center',
   },
   mealCalories: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#E53935',
   },
   mealMacro: {
     fontSize: 12,
-    color: '#64748B',
+    fontWeight: '600',
+    color: '#1E293B',
+  },
+  nutritionLabel: {
+    fontSize: 9,
+    color: '#94A3B8',
+    marginTop: 1,
   },
   mealActions: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginTop: 6,
-    gap: 12,
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 8,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
   },
   completeBtn: {
-    padding: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+    backgroundColor: '#F8FAFC',
   },
   completeBtnActive: {
-    padding: 4,
+    backgroundColor: '#E8F5E9',
+  },
+  completeBtnText: {
+    fontSize: 12,
+    color: '#94A3B8',
+    fontWeight: '500',
+  },
+  completeBtnTextActive: {
+    color: '#4CAF50',
   },
   deleteBtn: {
-    padding: 4,
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: '#FFF5F5',
   },
 
   // Empty Slot
   emptySlot: {
     backgroundColor: '#F8FAFC',
-    borderRadius: 12,
+    borderRadius: 14,
     padding: 16,
     borderWidth: 1,
     borderColor: '#E8ECF0',
     borderStyle: 'dashed',
+  },
+  emptySlotContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: 12,
   },
   emptySlotIcon: {
-    fontSize: 20,
+    fontSize: 18,
   },
   emptySlotText: {
     fontSize: 14,
     color: '#64748B',
+    fontWeight: '500',
+  },
+  emptySlotAddBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#E53935',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 
   // Quick Actions
   quickActions: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 10,
+    paddingHorizontal: 16,
     marginTop: 8,
   },
   quickActionBtn: {
     flex: 1,
-    minWidth: (width - 48) / 2,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    minWidth: (width - 52) / 2,
+    borderRadius: 14,
+    overflow: 'hidden',
+  },
+  quickActionGradient: {
     padding: 14,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+  },
+  quickActionIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 6,
   },
   quickActionText: {
     fontSize: 12,
     color: '#1E293B',
-    marginTop: 4,
+    fontWeight: '600',
   },
 });
