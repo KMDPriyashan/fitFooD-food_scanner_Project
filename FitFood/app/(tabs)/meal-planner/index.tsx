@@ -36,6 +36,7 @@ export default function MealPlannerScreen() {
   // ✅ Auto refresh when screen comes into focus (after returning from create-meal)
   useFocusEffect(
     useCallback(() => {
+      console.log('🔄 Meal Planner screen focused - refreshing data...');
       loadData();
       return () => {};
     }, [])
@@ -48,6 +49,7 @@ export default function MealPlannerScreen() {
       setPlan(todayPlan);
       const progressData = await MealPlannerService.getNutritionProgress();
       setProgress(progressData);
+      console.log('✅ Meal plan loaded successfully');
     } catch (error) {
       console.error('Error loading meal plan:', error);
     } finally {
@@ -61,8 +63,12 @@ export default function MealPlannerScreen() {
     setRefreshing(false);
   };
 
+  // ✅ Updated: Navigate to create meal with refresh flag
   const handleAddMeal = () => {
-    router.push('/(tabs)/meal-planner/create-meal');
+    router.push({
+      pathname: '/(tabs)/meal-planner/create-meal',
+      params: { refresh: 'true' }
+    });
   };
 
   const handleViewMeal = (meal: Meal) => {
@@ -96,6 +102,7 @@ export default function MealPlannerScreen() {
               setPlan(updatedPlan);
               const progressData = await MealPlannerService.getNutritionProgress();
               setProgress(progressData);
+              Alert.alert('✅ Deleted', 'Meal has been removed successfully');
             }
           },
         },

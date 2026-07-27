@@ -220,7 +220,7 @@ export default function CreateMealScreen() {
               // ✅ Reset form before navigating back
               resetForm();
               // ✅ Navigate back to meal planner with refresh flag
-              router.back();
+              router.push('/(tabs)/meal-planner');
             }
           }
         ]
