@@ -21,12 +21,19 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors } from '../../../constants/Colors';
 import { marketplaceService } from '../../services/marketplaceService';
 import { Product, Category, FilterOptions, CartItem } from '../../../types/marketplace.types';
 import { SAMPLE_PRODUCTS, CATEGORIES } from '../../../constants/marketplaceData';
 
 const { width } = Dimensions.get('window');
+
+// ✅ Storage Keys
+const STORAGE_KEYS = {
+  SHOPS: '@marketplace_shops',
+  PRODUCTS: '@marketplace_products',
+};
 
 // Shop Interface
 interface Shop {
@@ -49,7 +56,7 @@ interface Shop {
   createdAt: string;
 }
 
-// Sample Shops Data
+// Sample Shops Data (for initial load)
 const SAMPLE_SHOPS: Shop[] = [
   {
     id: 'shop1',
@@ -117,11 +124,11 @@ export default function MarketplaceScreen() {
   const [categories, setCategories] = useState<Category[]>(CATEGORIES);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [shopSearchQuery, setShopSearchQuery] = useState(''); // ✅ Shop search state
+  const [shopSearchQuery, setShopSearchQuery] = useState('');
   const [cartCount, setCartCount] = useState(0);
   const [showFilters, setShowFilters] = useState(false);
-  const [shops, setShops] = useState<Shop[]>(SAMPLE_SHOPS);
-  const [filteredShops, setFilteredShops] = useState<Shop[]>(SAMPLE_SHOPS); // ✅ Filtered shops
+  const [shops, setShops] = useState<Shop[]>([]);
+  const [filteredShops, setFilteredShops] = useState<Shop[]>([]);
   const [selectedShop, setSelectedShop] = useState<Shop | null>(null);
   const [showShopModal, setShowShopModal] = useState(false);
   const [viewMode, setViewMode] = useState<'products' | 'shops'>('shops');
@@ -169,43 +176,80 @@ export default function MarketplaceScreen() {
     searchQuery: '',
   });
 
+  // ✅ Load data from storage on mount
   useEffect(() => {
-    loadProducts();
+    loadData();
     loadCartCount();
   }, []);
 
-  useEffect(() => {
-    applyFilters();
-  }, [selectedCategory, searchQuery, products, filters.isOrganic, filters.isLocal, filters.isSeasonal, filters.priceRange]);
-
-  // ✅ Filter shops when search query changes
-  useEffect(() => {
-    if (shopSearchQuery.trim()) {
-      const query = shopSearchQuery.toLowerCase().trim();
-      const filtered = shops.filter(shop =>
-        shop.name.toLowerCase().includes(query) ||
-        (shop.nameSi && shop.nameSi.toLowerCase().includes(query)) ||
-        shop.category.toLowerCase().includes(query) ||
-        shop.ownerName.toLowerCase().includes(query)
-      );
-      setFilteredShops(filtered);
-    } else {
-      setFilteredShops(shops);
-    }
-  }, [shopSearchQuery, shops]);
-
-  const loadProducts = async () => {
+  // ✅ Load shops from AsyncStorage
+  const loadData = async () => {
     setLoading(true);
     try {
-      const data = await marketplaceService.getAllProducts();
-      setProducts(data);
-      setFilteredProducts(data);
+      // Load shops
+      const savedShops = await AsyncStorage.getItem(STORAGE_KEYS.SHOPS);
+      let loadedShops: Shop[] = [];
+      
+      if (savedShops) {
+        loadedShops = JSON.parse(savedShops);
+        console.log('✅ Loaded shops from storage:', loadedShops.length);
+      } else {
+        // First time - save sample shops
+        loadedShops = SAMPLE_SHOPS;
+        await AsyncStorage.setItem(STORAGE_KEYS.SHOPS, JSON.stringify(loadedShops));
+        console.log('📦 Saved sample shops to storage');
+      }
+
+      // Load products from shops
+      const allProducts: Product[] = [];
+      loadedShops.forEach(shop => {
+        if (shop.products && shop.products.length > 0) {
+          allProducts.push(...shop.products);
+        }
+      });
+
+      setShops(loadedShops);
+      setFilteredShops(loadedShops);
+      setProducts(allProducts);
+      setFilteredProducts(allProducts);
+
+      // Load products from marketplace service as fallback
+      try {
+        const marketProducts = await marketplaceService.getAllProducts();
+        if (marketProducts.length > 0) {
+          setProducts(marketProducts);
+          setFilteredProducts(marketProducts);
+        }
+      } catch (error) {
+        console.log('Marketplace service not available, using shop products');
+      }
+
     } catch (error) {
-      console.error('Error loading products:', error);
-      setProducts(SAMPLE_PRODUCTS);
-      setFilteredProducts(SAMPLE_PRODUCTS);
+      console.error('Error loading data:', error);
+      // Fallback to sample shops
+      setShops(SAMPLE_SHOPS);
+      setFilteredShops(SAMPLE_SHOPS);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // ✅ Save shops to AsyncStorage
+  const saveShopsToStorage = async (updatedShops: Shop[]) => {
+    try {
+      await AsyncStorage.setItem(STORAGE_KEYS.SHOPS, JSON.stringify(updatedShops));
+      console.log('✅ Shops saved to storage:', updatedShops.length);
+    } catch (error) {
+      console.error('Error saving shops:', error);
+    }
+  };
+
+  // ✅ Save products to AsyncStorage
+  const saveProductsToStorage = async (updatedProducts: Product[]) => {
+    try {
+      await AsyncStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(updatedProducts));
+    } catch (error) {
+      console.error('Error saving products:', error);
     }
   };
 
@@ -267,6 +311,26 @@ export default function MarketplaceScreen() {
     setFilteredProducts(filtered);
   };
 
+  // ✅ Filter shops when search query changes
+  useEffect(() => {
+    filterShops();
+  }, [shopSearchQuery, shops]);
+
+  const filterShops = () => {
+    if (shopSearchQuery.trim()) {
+      const query = shopSearchQuery.toLowerCase().trim();
+      const filtered = shops.filter(shop =>
+        shop.name.toLowerCase().includes(query) ||
+        (shop.nameSi && shop.nameSi.toLowerCase().includes(query)) ||
+        shop.category.toLowerCase().includes(query) ||
+        shop.ownerName.toLowerCase().includes(query)
+      );
+      setFilteredShops(filtered);
+    } else {
+      setFilteredShops(shops);
+    }
+  };
+
   const handleAddToCart = async (product: Product) => {
     try {
       const cart = await marketplaceService.getCart();
@@ -311,7 +375,7 @@ export default function MarketplaceScreen() {
     }
   };
 
-  // Create Shop Functions
+  // ✅ Create Shop Functions - With Permanent Storage
   const handleCreateShop = async () => {
     if (!shopForm.name.trim()) {
       Alert.alert('Error', 'Please enter shop name');
@@ -345,15 +409,18 @@ export default function MarketplaceScreen() {
         createdAt: new Date().toISOString(),
       };
 
-      // ✅ Update shops state
+      // ✅ Update state
       const updatedShops = [newShop, ...shops];
       setShops(updatedShops);
       setFilteredShops(updatedShops);
 
-      // ✅ Close create modal
+      // ✅ Save to AsyncStorage (PERMANENT)
+      await saveShopsToStorage(updatedShops);
+
+      // Close create modal
       setShowCreateShop(false);
 
-      // ✅ Reset form
+      // Reset form
       setShopForm({
         name: '',
         nameSi: '',
@@ -366,7 +433,7 @@ export default function MarketplaceScreen() {
         isOpen: true,
       });
 
-      // ✅ Show success alert with option to add products
+      // Show success alert with option to add products
       Alert.alert(
         '🎉 Shop Created!',
         `${newShop.name} has been created successfully!\n\nYou can now add products to your shop.`,
@@ -390,7 +457,7 @@ export default function MarketplaceScreen() {
     }
   };
 
-  // Add Food to Shop Functions
+  // ✅ Add Food to Shop Functions - With Permanent Storage
   const handleAddFoodToShop = async () => {
     if (!selectedShopForFood) return;
     if (!foodForm.name.trim()) {
@@ -450,6 +517,9 @@ export default function MarketplaceScreen() {
       setShops(updatedShops);
       setFilteredShops(updatedShops);
 
+      // ✅ Save to AsyncStorage (PERMANENT)
+      await saveShopsToStorage(updatedShops);
+
       // Also add to global products
       setProducts([newProduct, ...products]);
 
@@ -496,6 +566,8 @@ export default function MarketplaceScreen() {
       setImage(result.assets[0].uri);
     }
   };
+
+  // ... (all render functions remain the same)
 
   // Render Create Shop Modal
   const renderCreateShopModal = () => (
@@ -1335,7 +1407,7 @@ export default function MarketplaceScreen() {
             />
           </View>
 
-          {/* ✅ Shops View */}
+          {/* Shops View */}
           {viewMode === 'shops' ? (
             <View style={styles.productsContainer}>
               <View style={styles.sectionHeader}>
@@ -1420,8 +1492,6 @@ export default function MarketplaceScreen() {
 }
 
 // Styles remain the same as before...
-// [All the styles from previous version remain unchanged]
-
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
