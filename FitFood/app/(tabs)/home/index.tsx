@@ -184,25 +184,6 @@ export default function HomeScreen() {
             </TouchableOpacity>
           ))}
         </View>
-
-        {/* Quote Section */}
-        <View style={styles.quoteContainer}>
-          <LinearGradient
-            colors={['#FFE8E8', '#FFD4D4']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.quoteGradient}
-          >
-            <Text style={styles.quoteIcon}>💚</Text>
-            <Text style={styles.quoteText}>
-              "Your health is an investment, not an expense."
-            </Text>
-          </LinearGradient>
-        </View>
-
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>Made with ❤️ in Sri Lanka</Text>
-        </View>
       </ScrollView>
     </SafeAreaView>
   );
