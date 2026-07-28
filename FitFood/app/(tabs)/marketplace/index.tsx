@@ -1,3 +1,4 @@
+// app/(tabs)/marketplace/index.tsx
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -29,13 +30,12 @@ import { SAMPLE_PRODUCTS, CATEGORIES } from '../../../constants/marketplaceData'
 
 const { width } = Dimensions.get('window');
 
-// ✅ Storage Keys
+// Storage Keys
 const STORAGE_KEYS = {
   SHOPS: '@marketplace_shops',
   PRODUCTS: '@marketplace_products',
 };
 
-// Shop Interface
 interface Shop {
   id: string;
   name: string;
@@ -56,7 +56,6 @@ interface Shop {
   createdAt: string;
 }
 
-// Sample Shops Data (for initial load)
 const SAMPLE_SHOPS: Shop[] = [
   {
     id: 'shop1',
@@ -133,7 +132,6 @@ export default function MarketplaceScreen() {
   const [showShopModal, setShowShopModal] = useState(false);
   const [viewMode, setViewMode] = useState<'products' | 'shops'>('shops');
 
-  // Create Shop Modal States
   const [showCreateShop, setShowCreateShop] = useState(false);
   const [shopFormLoading, setShopFormLoading] = useState(false);
   const [shopForm, setShopForm] = useState({
@@ -148,7 +146,6 @@ export default function MarketplaceScreen() {
     isOpen: true,
   });
 
-  // Add Food to Shop Modal States
   const [showAddFood, setShowAddFood] = useState(false);
   const [selectedShopForFood, setSelectedShopForFood] = useState<Shop | null>(null);
   const [foodFormLoading, setFoodFormLoading] = useState(false);
@@ -176,31 +173,24 @@ export default function MarketplaceScreen() {
     searchQuery: '',
   });
 
-  // ✅ Load data from storage on mount
   useEffect(() => {
     loadData();
     loadCartCount();
   }, []);
 
-  // ✅ Load shops from AsyncStorage
   const loadData = async () => {
     setLoading(true);
     try {
-      // Load shops
       const savedShops = await AsyncStorage.getItem(STORAGE_KEYS.SHOPS);
       let loadedShops: Shop[] = [];
       
       if (savedShops) {
         loadedShops = JSON.parse(savedShops);
-        console.log('✅ Loaded shops from storage:', loadedShops.length);
       } else {
-        // First time - save sample shops
         loadedShops = SAMPLE_SHOPS;
         await AsyncStorage.setItem(STORAGE_KEYS.SHOPS, JSON.stringify(loadedShops));
-        console.log('📦 Saved sample shops to storage');
       }
 
-      // Load products from shops
       const allProducts: Product[] = [];
       loadedShops.forEach(shop => {
         if (shop.products && shop.products.length > 0) {
@@ -213,7 +203,6 @@ export default function MarketplaceScreen() {
       setProducts(allProducts);
       setFilteredProducts(allProducts);
 
-      // Load products from marketplace service as fallback
       try {
         const marketProducts = await marketplaceService.getAllProducts();
         if (marketProducts.length > 0) {
@@ -221,12 +210,11 @@ export default function MarketplaceScreen() {
           setFilteredProducts(marketProducts);
         }
       } catch (error) {
-        console.log('Marketplace service not available, using shop products');
+        console.log('Marketplace service not available');
       }
 
     } catch (error) {
       console.error('Error loading data:', error);
-      // Fallback to sample shops
       setShops(SAMPLE_SHOPS);
       setFilteredShops(SAMPLE_SHOPS);
     } finally {
@@ -234,22 +222,11 @@ export default function MarketplaceScreen() {
     }
   };
 
-  // ✅ Save shops to AsyncStorage
   const saveShopsToStorage = async (updatedShops: Shop[]) => {
     try {
       await AsyncStorage.setItem(STORAGE_KEYS.SHOPS, JSON.stringify(updatedShops));
-      console.log('✅ Shops saved to storage:', updatedShops.length);
     } catch (error) {
       console.error('Error saving shops:', error);
-    }
-  };
-
-  // ✅ Save products to AsyncStorage
-  const saveProductsToStorage = async (updatedProducts: Product[]) => {
-    try {
-      await AsyncStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(updatedProducts));
-    } catch (error) {
-      console.error('Error saving products:', error);
     }
   };
 
@@ -311,7 +288,6 @@ export default function MarketplaceScreen() {
     setFilteredProducts(filtered);
   };
 
-  // ✅ Filter shops when search query changes
   useEffect(() => {
     filterShops();
   }, [shopSearchQuery, shops]);
@@ -375,7 +351,6 @@ export default function MarketplaceScreen() {
     }
   };
 
-  // ✅ Create Shop Functions - With Permanent Storage
   const handleCreateShop = async () => {
     if (!shopForm.name.trim()) {
       Alert.alert('Error', 'Please enter shop name');
@@ -409,18 +384,12 @@ export default function MarketplaceScreen() {
         createdAt: new Date().toISOString(),
       };
 
-      // ✅ Update state
       const updatedShops = [newShop, ...shops];
       setShops(updatedShops);
       setFilteredShops(updatedShops);
-
-      // ✅ Save to AsyncStorage (PERMANENT)
       await saveShopsToStorage(updatedShops);
 
-      // Close create modal
       setShowCreateShop(false);
-
-      // Reset form
       setShopForm({
         name: '',
         nameSi: '',
@@ -433,10 +402,9 @@ export default function MarketplaceScreen() {
         isOpen: true,
       });
 
-      // Show success alert with option to add products
       Alert.alert(
         '🎉 Shop Created!',
-        `${newShop.name} has been created successfully!\n\nYou can now add products to your shop.`,
+        `${newShop.name} has been created successfully!`,
         [
           {
             text: 'Add Products',
@@ -457,7 +425,6 @@ export default function MarketplaceScreen() {
     }
   };
 
-  // ✅ Add Food to Shop Functions - With Permanent Storage
   const handleAddFoodToShop = async () => {
     if (!selectedShopForFood) return;
     if (!foodForm.name.trim()) {
@@ -503,7 +470,6 @@ export default function MarketplaceScreen() {
         tags: [],
       };
 
-      // Update shop products
       const updatedShops = shops.map(shop => {
         if (shop.id === selectedShopForFood.id) {
           return {
@@ -516,20 +482,10 @@ export default function MarketplaceScreen() {
 
       setShops(updatedShops);
       setFilteredShops(updatedShops);
-
-      // ✅ Save to AsyncStorage (PERMANENT)
       await saveShopsToStorage(updatedShops);
-
-      // Also add to global products
       setProducts([newProduct, ...products]);
 
-      Alert.alert(
-        '✅ Food Added!',
-        `${newProduct.name} has been added to ${selectedShopForFood.name}!`,
-        [{ text: 'OK' }]
-      );
-
-      // Reset form
+      Alert.alert('✅ Food Added!', `${newProduct.name} has been added!`);
       setFoodForm({
         name: '',
         nameSi: '',
@@ -553,7 +509,6 @@ export default function MarketplaceScreen() {
     }
   };
 
-  // Pick Image
   const pickImage = async (setImage: (url: string) => void) => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -567,9 +522,257 @@ export default function MarketplaceScreen() {
     }
   };
 
-  // ... (all render functions remain the same)
+  // ===== RENDER FUNCTIONS =====
 
-  // Render Create Shop Modal
+  const renderHeader = () => (
+    <View style={styles.header}>
+      <LinearGradient
+        colors={['#E53935', '#C62828']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.headerGradient}
+      >
+        <View style={styles.headerContent}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+            <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>🛒 Marketplace</Text>
+          <TouchableOpacity 
+            style={styles.cartBtn}
+            onPress={() => router.push('/(modals)/cart')}
+          >
+            <Ionicons name="cart" size={24} color="#FFFFFF" />
+            {cartCount > 0 && (
+              <View style={styles.cartBadge}>
+                <Text style={styles.cartBadgeText}>{cartCount}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        </View>
+        <Text style={styles.headerSubtitle}>Fresh, healthy foods from local farmers</Text>
+      </LinearGradient>
+    </View>
+  );
+
+  const renderSearchBar = () => (
+    <View style={styles.searchContainer}>
+      <View style={styles.searchBar}>
+        <Ionicons name="search-outline" size={20} color="#94A3B8" />
+        <TextInput
+          style={styles.searchInput}
+          placeholder={viewMode === 'shops' ? "Search shops..." : "Search products..."}
+          placeholderTextColor="#94A3B8"
+          value={viewMode === 'shops' ? shopSearchQuery : searchQuery}
+          onChangeText={viewMode === 'shops' ? setShopSearchQuery : setSearchQuery}
+        />
+        {(viewMode === 'shops' ? shopSearchQuery : searchQuery).length > 0 && (
+          <TouchableOpacity onPress={() => {
+            if (viewMode === 'shops') setShopSearchQuery('');
+            else setSearchQuery('');
+          }}>
+            <Ionicons name="close-circle" size={20} color="#94A3B8" />
+          </TouchableOpacity>
+        )}
+        
+        <View style={styles.viewToggle}>
+          <TouchableOpacity
+            style={[styles.viewToggleBtn, viewMode === 'shops' && styles.viewToggleBtnActive]}
+            onPress={() => setViewMode('shops')}
+          >
+            <Ionicons name="storefront-outline" size={18} color={viewMode === 'shops' ? '#FFFFFF' : '#64748B'} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.viewToggleBtn, viewMode === 'products' && styles.viewToggleBtnActive]}
+            onPress={() => setViewMode('products')}
+          >
+            <Ionicons name="grid-outline" size={18} color={viewMode === 'products' ? '#FFFFFF' : '#64748B'} />
+          </TouchableOpacity>
+        </View>
+        
+        <TouchableOpacity 
+          style={styles.createShopBtn}
+          onPress={() => setShowCreateShop(true)}
+        >
+          <Ionicons name="add-circle" size={24} color="#E53935" />
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={styles.filterBtn}
+          onPress={() => setShowFilters(!showFilters)}
+        >
+          <Ionicons name="options-outline" size={20} color="#E53935" />
+        </TouchableOpacity>
+      </View>
+
+      {showFilters && (
+        <View style={styles.filterPanel}>
+          <Text style={styles.filterTitle}>Filters</Text>
+          <View style={styles.filterRow}>
+            <TouchableOpacity
+              style={[styles.filterChip, filters.isOrganic && styles.filterChipActive]}
+              onPress={() => setFilters({ ...filters, isOrganic: !filters.isOrganic })}
+            >
+              <Text style={[styles.filterChipText, filters.isOrganic && styles.filterChipTextActive]}>
+                🌱 Organic
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.filterChip, filters.isLocal && styles.filterChipActive]}
+              onPress={() => setFilters({ ...filters, isLocal: !filters.isLocal })}
+            >
+              <Text style={[styles.filterChipText, filters.isLocal && styles.filterChipTextActive]}>
+                🇱🇰 Local
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.filterChip, filters.isSeasonal && styles.filterChipActive]}
+              onPress={() => setFilters({ ...filters, isSeasonal: !filters.isSeasonal })}
+            >
+              <Text style={[styles.filterChipText, filters.isSeasonal && styles.filterChipTextActive]}>
+                📅 Seasonal
+              </Text>
+            </TouchableOpacity>
+          </View>
+          <TouchableOpacity
+            style={styles.filterResetBtn}
+            onPress={() => {
+              setFilters({
+                category: 'all',
+                priceRange: { min: 0, max: 1000 },
+                isOrganic: false,
+                isLocal: false,
+                isSeasonal: false,
+                searchQuery: '',
+              });
+              setSelectedCategory('all');
+              setSearchQuery('');
+            }}
+          >
+            <Text style={styles.filterResetText}>Reset Filters</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+    </View>
+  );
+
+  const renderCategory = ({ item }: { item: Category }) => (
+    <TouchableOpacity
+      style={[
+        styles.categoryChip,
+        selectedCategory === item.id && styles.categoryChipActive,
+      ]}
+      onPress={() => setSelectedCategory(item.id)}
+    >
+      <Text style={[
+        styles.categoryChipText,
+        selectedCategory === item.id && styles.categoryChipTextActive,
+      ]}>
+        {item.name}
+      </Text>
+    </TouchableOpacity>
+  );
+
+  // ✅ Modern Shop Card
+  const renderShopCard = ({ item }: { item: Shop }) => (
+    <TouchableOpacity
+      style={styles.shopCard}
+      onPress={() => {
+        setSelectedShop(item);
+        setShowShopModal(true);
+      }}
+      activeOpacity={0.8}
+    >
+      <Image source={{ uri: item.image }} style={styles.shopImage} />
+      <View style={styles.shopStatusBadge}>
+        <View style={[styles.statusDot, { backgroundColor: item.isOpen ? '#4CAF50' : '#F44336' }]} />
+        <Text style={styles.shopStatusText}>{item.isOpen ? 'Open' : 'Closed'}</Text>
+      </View>
+      
+      <View style={styles.shopInfo}>
+        <View style={styles.shopHeader}>
+          <Text style={styles.shopName} numberOfLines={1}>{item.name}</Text>
+          <View style={styles.shopRating}>
+            <Ionicons name="star" size={14} color="#FFD700" />
+            <Text style={styles.shopRatingText}>{item.rating}</Text>
+            <Text style={styles.shopReviews}>({item.reviews})</Text>
+          </View>
+        </View>
+        
+        <Text style={styles.shopCategory}>{item.category}</Text>
+        {item.nameSi && (
+          <Text style={styles.shopNameSi} numberOfLines={1}>{item.nameSi}</Text>
+        )}
+        
+        <View style={styles.shopFooter}>
+          <View style={styles.shopMeta}>
+            <Ionicons name="time-outline" size={14} color="#94A3B8" />
+            <Text style={styles.shopMetaText}>{item.deliveryTime}</Text>
+          </View>
+          <View style={styles.shopMeta}>
+            <Ionicons name="location-outline" size={14} color="#94A3B8" />
+            <Text style={styles.shopMetaText}>{item.distance}</Text>
+          </View>
+          <Text style={styles.shopProductCount}>{item.products.length} items</Text>
+        </View>
+
+        <View style={styles.shopOwnerBadge}>
+          <Ionicons name="person-outline" size={12} color="#94A3B8" />
+          <Text style={styles.shopOwnerText}>By {item.ownerName}</Text>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+
+  // ✅ Modern Product Card
+  const renderProductCard = ({ item }: { item: Product }) => {
+    const imageUrl = (item as any).image || (item as any).image_url || 'https://via.placeholder.com/150/4CAF50/FFFFFF?text=Food';
+    const isOrganic = (item as any).isOrganic !== undefined ? (item as any).isOrganic : (item as any).is_organic;
+    const isSeasonal = (item as any).isSeasonal !== undefined ? (item as any).isSeasonal : (item as any).is_seasonal;
+
+    return (
+      <TouchableOpacity
+        style={styles.productCard}
+        onPress={() => router.push({
+          pathname: '/(modals)/product-detail',
+          params: { productId: item.id }
+        })}
+        activeOpacity={0.8}
+      >
+        <Image source={{ uri: imageUrl }} style={styles.productImage} />
+        {isOrganic && (
+          <View style={styles.organicBadge}>
+            <Text style={styles.organicBadgeText}>🌱 Organic</Text>
+          </View>
+        )}
+        {isSeasonal && (
+          <View style={[styles.organicBadge, styles.seasonalBadge]}>
+            <Text style={styles.organicBadgeText}>📅 Seasonal</Text>
+          </View>
+        )}
+        <View style={styles.productInfo}>
+          <Text style={styles.productName} numberOfLines={1}>{item.name}</Text>
+          {item.nameSi && (
+            <Text style={styles.productNameSi} numberOfLines={1}>{item.nameSi}</Text>
+          )}
+          <Text style={styles.productDesc} numberOfLines={2}>{item.description}</Text>
+          <View style={styles.productFooter}>
+            <View>
+              <Text style={styles.productPrice}>LKR {item.price}</Text>
+              <Text style={styles.productUnit}>per {item.unit}</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.addToCartBtn}
+              onPress={() => handleAddToCart(item)}
+            >
+              <Text style={styles.addToCartText}>Add</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
+  // Modal render functions (same as before but with modern styling)
   const renderCreateShopModal = () => (
     <Modal
       visible={showCreateShop}
@@ -590,7 +793,6 @@ export default function MarketplaceScreen() {
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false} style={styles.modalForm}>
-            {/* Shop Image */}
             <TouchableOpacity
               style={styles.imagePicker}
               onPress={() => pickImage((url) => setShopForm({ ...shopForm, image: url }))}
@@ -605,7 +807,6 @@ export default function MarketplaceScreen() {
               )}
             </TouchableOpacity>
 
-            {/* Shop Name */}
             <View style={styles.formGroup}>
               <Text style={styles.formLabel}>Shop Name *</Text>
               <TextInput
@@ -617,7 +818,6 @@ export default function MarketplaceScreen() {
               />
             </View>
 
-            {/* Shop Name Sinhala */}
             <View style={styles.formGroup}>
               <Text style={styles.formLabel}>Shop Name (Sinhala)</Text>
               <TextInput
@@ -629,7 +829,6 @@ export default function MarketplaceScreen() {
               />
             </View>
 
-            {/* Category */}
             <View style={styles.formGroup}>
               <Text style={styles.formLabel}>Category *</Text>
               <TextInput
@@ -641,7 +840,6 @@ export default function MarketplaceScreen() {
               />
             </View>
 
-            {/* Description */}
             <View style={styles.formGroup}>
               <Text style={styles.formLabel}>Description</Text>
               <TextInput
@@ -656,7 +854,6 @@ export default function MarketplaceScreen() {
               />
             </View>
 
-            {/* Address */}
             <View style={styles.formGroup}>
               <Text style={styles.formLabel}>Address</Text>
               <TextInput
@@ -668,7 +865,6 @@ export default function MarketplaceScreen() {
               />
             </View>
 
-            {/* Phone */}
             <View style={styles.formGroup}>
               <Text style={styles.formLabel}>Phone</Text>
               <TextInput
@@ -681,7 +877,6 @@ export default function MarketplaceScreen() {
               />
             </View>
 
-            {/* Delivery Time */}
             <View style={styles.formGroup}>
               <Text style={styles.formLabel}>Delivery Time</Text>
               <TextInput
@@ -693,7 +888,6 @@ export default function MarketplaceScreen() {
               />
             </View>
 
-            {/* Open Status */}
             <View style={styles.formGroup}>
               <Text style={styles.formLabel}>Shop Status</Text>
               <View style={styles.statusToggle}>
@@ -716,7 +910,6 @@ export default function MarketplaceScreen() {
               </View>
             </View>
 
-            {/* Submit Button */}
             <TouchableOpacity
               style={[styles.submitBtn, shopFormLoading && styles.submitBtnDisabled]}
               onPress={handleCreateShop}
@@ -736,7 +929,6 @@ export default function MarketplaceScreen() {
     </Modal>
   );
 
-  // Render Add Food Modal
   const renderAddFoodModal = () => (
     <Modal
       visible={showAddFood}
@@ -759,7 +951,6 @@ export default function MarketplaceScreen() {
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false} style={styles.modalForm}>
-            {/* Food Image */}
             <TouchableOpacity
               style={styles.imagePicker}
               onPress={() => pickImage((url) => setFoodForm({ ...foodForm, image: url }))}
@@ -774,7 +965,6 @@ export default function MarketplaceScreen() {
               )}
             </TouchableOpacity>
 
-            {/* Food Name */}
             <View style={styles.formGroup}>
               <Text style={styles.formLabel}>Food Name *</Text>
               <TextInput
@@ -786,7 +976,6 @@ export default function MarketplaceScreen() {
               />
             </View>
 
-            {/* Food Name Sinhala */}
             <View style={styles.formGroup}>
               <Text style={styles.formLabel}>Food Name (Sinhala)</Text>
               <TextInput
@@ -798,7 +987,6 @@ export default function MarketplaceScreen() {
               />
             </View>
 
-            {/* Description */}
             <View style={styles.formGroup}>
               <Text style={styles.formLabel}>Description</Text>
               <TextInput
@@ -813,7 +1001,6 @@ export default function MarketplaceScreen() {
               />
             </View>
 
-            {/* Category & Price Row */}
             <View style={styles.row}>
               <View style={[styles.formGroup, { flex: 1, marginRight: 8 }]}>
                 <Text style={styles.formLabel}>Category</Text>
@@ -838,7 +1025,6 @@ export default function MarketplaceScreen() {
               </View>
             </View>
 
-            {/* Unit & Stock */}
             <View style={styles.row}>
               <View style={[styles.formGroup, { flex: 1, marginRight: 8 }]}>
                 <Text style={styles.formLabel}>Unit</Text>
@@ -863,7 +1049,6 @@ export default function MarketplaceScreen() {
               </View>
             </View>
 
-            {/* Nutrition */}
             <Text style={styles.formLabel}>Nutrition (per 100g)</Text>
             <View style={styles.nutritionRow}>
               <View style={[styles.nutritionInput, { flex: 1 }]}>
@@ -943,7 +1128,6 @@ export default function MarketplaceScreen() {
               <View style={[styles.nutritionInput, { flex: 1 }]} />
             </View>
 
-            {/* Tags */}
             <View style={styles.formGroup}>
               <Text style={styles.formLabel}>Tags</Text>
               <View style={styles.tagRow}>
@@ -974,7 +1158,6 @@ export default function MarketplaceScreen() {
               </View>
             </View>
 
-            {/* Submit Button */}
             <TouchableOpacity
               style={[styles.submitBtn, foodFormLoading && styles.submitBtnDisabled]}
               onPress={handleAddFoodToShop}
@@ -994,58 +1177,6 @@ export default function MarketplaceScreen() {
     </Modal>
   );
 
-  // Render Shop Card
-  const renderShopCard = ({ item }: { item: Shop }) => (
-    <TouchableOpacity
-      style={styles.shopCard}
-      onPress={() => {
-        setSelectedShop(item);
-        setShowShopModal(true);
-      }}
-      activeOpacity={0.8}
-    >
-      <Image source={{ uri: item.image }} style={styles.shopImage} />
-      <View style={styles.shopStatusBadge}>
-        <View style={[styles.statusDot, { backgroundColor: item.isOpen ? '#4CAF50' : '#F44336' }]} />
-        <Text style={styles.shopStatusText}>{item.isOpen ? 'Open' : 'Closed'}</Text>
-      </View>
-      
-      <View style={styles.shopInfo}>
-        <View style={styles.shopHeader}>
-          <Text style={styles.shopName} numberOfLines={1}>{item.name}</Text>
-          <View style={styles.shopRating}>
-            <Ionicons name="star" size={14} color="#FFD700" />
-            <Text style={styles.shopRatingText}>{item.rating}</Text>
-            <Text style={styles.shopReviews}>({item.reviews})</Text>
-          </View>
-        </View>
-        
-        <Text style={styles.shopCategory}>{item.category}</Text>
-        {item.nameSi && (
-          <Text style={styles.shopNameSi} numberOfLines={1}>{item.nameSi}</Text>
-        )}
-        
-        <View style={styles.shopFooter}>
-          <View style={styles.shopMeta}>
-            <Ionicons name="time-outline" size={14} color="#94A3B8" />
-            <Text style={styles.shopMetaText}>{item.deliveryTime}</Text>
-          </View>
-          <View style={styles.shopMeta}>
-            <Ionicons name="location-outline" size={14} color="#94A3B8" />
-            <Text style={styles.shopMetaText}>{item.distance}</Text>
-          </View>
-          <Text style={styles.shopProductCount}>{item.products.length} items</Text>
-        </View>
-
-        <View style={styles.shopOwnerBadge}>
-          <Ionicons name="person-outline" size={12} color="#94A3B8" />
-          <Text style={styles.shopOwnerText}>By {item.ownerName}</Text>
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
-
-  // Render Shop Modal
   const renderShopModal = () => {
     if (!selectedShop) return null;
 
@@ -1178,208 +1309,10 @@ export default function MarketplaceScreen() {
     );
   };
 
-  const renderProductCard = ({ item }: { item: Product }) => {
-    const imageUrl = (item as any).image || (item as any).image_url || 'https://via.placeholder.com/150/4CAF50/FFFFFF?text=Food';
-    const isOrganic = (item as any).isOrganic !== undefined ? (item as any).isOrganic : (item as any).is_organic;
-    const isSeasonal = (item as any).isSeasonal !== undefined ? (item as any).isSeasonal : (item as any).is_seasonal;
-
-    return (
-      <TouchableOpacity
-        style={styles.productCard}
-        onPress={() => router.push({
-          pathname: '/(modals)/product-detail',
-          params: { productId: item.id }
-        })}
-        activeOpacity={0.8}
-      >
-        <Image source={{ uri: imageUrl }} style={styles.productImage} />
-        {isOrganic && (
-          <View style={styles.organicBadge}>
-            <Text style={styles.organicBadgeText}>🌱 Organic</Text>
-          </View>
-        )}
-        {isSeasonal && (
-          <View style={[styles.organicBadge, styles.seasonalBadge]}>
-            <Text style={styles.organicBadgeText}>📅 Seasonal</Text>
-          </View>
-        )}
-        <View style={styles.productInfo}>
-          <Text style={styles.productName} numberOfLines={1}>{item.name}</Text>
-          {item.nameSi && (
-            <Text style={styles.productNameSi} numberOfLines={1}>{item.nameSi}</Text>
-          )}
-          <Text style={styles.productDesc} numberOfLines={2}>{item.description}</Text>
-          <View style={styles.productFooter}>
-            <View>
-              <Text style={styles.productPrice}>LKR {item.price}</Text>
-              <Text style={styles.productUnit}>per {item.unit}</Text>
-            </View>
-            <TouchableOpacity
-              style={styles.addToCartBtn}
-              onPress={() => handleAddToCart(item)}
-            >
-              <Text style={styles.addToCartText}>Add</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </TouchableOpacity>
-    );
-  };
-
-  const renderCategory = ({ item }: { item: Category }) => (
-    <TouchableOpacity
-      style={[
-        styles.categoryChip,
-        selectedCategory === item.id && styles.categoryChipActive,
-      ]}
-      onPress={() => setSelectedCategory(item.id)}
-    >
-      <Text style={[
-        styles.categoryChipText,
-        selectedCategory === item.id && styles.categoryChipTextActive,
-      ]}>
-        {item.name}
-      </Text>
-    </TouchableOpacity>
-  );
-
-  const renderHeader = () => (
-    <View style={styles.header}>
-      <LinearGradient
-        colors={['#E53935', '#C62828']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={styles.headerGradient}
-      >
-        <View style={styles.headerContent}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>🛒 Food Marketplace</Text>
-          <TouchableOpacity 
-            style={styles.cartBtn}
-            onPress={() => router.push('/(modals)/cart')}
-          >
-            <Ionicons name="cart" size={24} color="#FFFFFF" />
-            {cartCount > 0 && (
-              <View style={styles.cartBadge}>
-                <Text style={styles.cartBadgeText}>{cartCount}</Text>
-              </View>
-            )}
-          </TouchableOpacity>
-        </View>
-        <Text style={styles.headerSubtitle}>Fresh, healthy foods from local farmers</Text>
-      </LinearGradient>
-    </View>
-  );
-
-  const renderSearchBar = () => (
-    <View style={styles.searchContainer}>
-      <View style={styles.searchBar}>
-        <Ionicons name="search" size={20} color="#94A3B8" />
-        <TextInput
-          style={styles.searchInput}
-          placeholder={viewMode === 'shops' ? "Search shops..." : "Search products..."}
-          placeholderTextColor="#94A3B8"
-          value={viewMode === 'shops' ? shopSearchQuery : searchQuery}
-          onChangeText={viewMode === 'shops' ? setShopSearchQuery : setSearchQuery}
-        />
-        {(viewMode === 'shops' ? shopSearchQuery : searchQuery).length > 0 && (
-          <TouchableOpacity onPress={() => {
-            if (viewMode === 'shops') setShopSearchQuery('');
-            else setSearchQuery('');
-          }}>
-            <Ionicons name="close-circle" size={20} color="#94A3B8" />
-          </TouchableOpacity>
-        )}
-        
-        {/* View Mode Toggle */}
-        <View style={styles.viewToggle}>
-          <TouchableOpacity
-            style={[styles.viewToggleBtn, viewMode === 'shops' && styles.viewToggleBtnActive]}
-            onPress={() => setViewMode('shops')}
-          >
-            <Ionicons name="storefront-outline" size={18} color={viewMode === 'shops' ? '#FFFFFF' : '#64748B'} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.viewToggleBtn, viewMode === 'products' && styles.viewToggleBtnActive]}
-            onPress={() => setViewMode('products')}
-          >
-            <Ionicons name="grid-outline" size={18} color={viewMode === 'products' ? '#FFFFFF' : '#64748B'} />
-          </TouchableOpacity>
-        </View>
-        
-        {/* Create Shop Button */}
-        <TouchableOpacity 
-          style={styles.createShopBtn}
-          onPress={() => setShowCreateShop(true)}
-        >
-          <Ionicons name="add-circle" size={24} color="#E53935" />
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.filterBtn}
-          onPress={() => setShowFilters(!showFilters)}
-        >
-          <Ionicons name="options-outline" size={20} color="#E53935" />
-        </TouchableOpacity>
-      </View>
-
-      {showFilters && (
-        <View style={styles.filterPanel}>
-          <Text style={styles.filterTitle}>Filters</Text>
-          <View style={styles.filterRow}>
-            <TouchableOpacity
-              style={[styles.filterChip, filters.isOrganic && styles.filterChipActive]}
-              onPress={() => setFilters({ ...filters, isOrganic: !filters.isOrganic })}
-            >
-              <Text style={[styles.filterChipText, filters.isOrganic && styles.filterChipTextActive]}>
-                🌱 Organic
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.filterChip, filters.isLocal && styles.filterChipActive]}
-              onPress={() => setFilters({ ...filters, isLocal: !filters.isLocal })}
-            >
-              <Text style={[styles.filterChipText, filters.isLocal && styles.filterChipTextActive]}>
-                🇱🇰 Local
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.filterChip, filters.isSeasonal && styles.filterChipActive]}
-              onPress={() => setFilters({ ...filters, isSeasonal: !filters.isSeasonal })}
-            >
-              <Text style={[styles.filterChipText, filters.isSeasonal && styles.filterChipTextActive]}>
-                📅 Seasonal
-              </Text>
-            </TouchableOpacity>
-          </View>
-          <TouchableOpacity
-            style={styles.filterResetBtn}
-            onPress={() => {
-              setFilters({
-                category: 'all',
-                priceRange: { min: 0, max: 1000 },
-                isOrganic: false,
-                isLocal: false,
-                isSeasonal: false,
-                searchQuery: '',
-              });
-              setSelectedCategory('all');
-              setSearchQuery('');
-            }}
-          >
-            <Text style={styles.filterResetText}>Reset Filters</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-    </View>
-  );
-
   if (loading) {
     return (
       <SafeAreaView style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
+        <ActivityIndicator size="large" color="#E53935" />
         <Text style={styles.loadingText}>Loading products...</Text>
       </SafeAreaView>
     );
@@ -1441,7 +1374,6 @@ export default function MarketplaceScreen() {
               )}
             </View>
           ) : (
-            /* Products View */
             <View style={styles.productsContainer}>
               {filteredProducts.length === 0 ? (
                 <View style={styles.emptyState}>
@@ -1491,7 +1423,6 @@ export default function MarketplaceScreen() {
   );
 }
 
-// Styles remain the same as before...
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
@@ -1721,7 +1652,7 @@ const styles = StyleSheet.create({
     color: '#94A3B8',
   },
 
-  // Products
+  // Products Container
   productsContainer: {
     flex: 1,
   },
