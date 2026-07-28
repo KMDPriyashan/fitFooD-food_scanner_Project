@@ -9,18 +9,43 @@ import {
   Dimensions,
 } from 'react-native';
 import { router, usePathname } from 'expo-router';
-import { MaterialIcons } from '@expo/vector-icons';
-import { colors } from '../constants/Colors';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const { width } = Dimensions.get('window');
 
-// Tab Configuration
+// ✅ Tab Configuration with your actual features
 const TABS = [
-  { name: 'Home', icon: 'home', route: '/(tabs)/home' },
-  { name: 'Scan', icon: 'camera-alt', route: '/(tabs)/scan' },
-  { name: 'History', icon: 'history', route: '/(tabs)/history' },
-  { name: 'Trend', icon: 'trending-up', route: '/(tabs)/trend' },
-  { name: 'Profile', icon: 'person', route: '/(tabs)/profile' },
+  { 
+    name: 'Food DB', 
+    icon: 'restaurant-outline', 
+    activeIcon: 'restaurant', 
+    route: '/(tabs)/SLfood' 
+  },
+  { 
+    name: 'Expert', 
+    icon: 'medkit-outline', 
+    activeIcon: 'medkit', 
+    route: '/(tabs)/expert' 
+  },
+  { 
+    name: 'Recipes', 
+    icon: 'book-outline', 
+    activeIcon: 'book', 
+    route: '/(modals)/recipes' 
+  },
+  { 
+    name: 'Marketplace', 
+    icon: 'storefront-outline', 
+    activeIcon: 'storefront', 
+    route: '/(tabs)/marketplace' 
+  },
+  { 
+    name: 'Meal Planner', 
+    icon: 'calendar-outline', 
+    activeIcon: 'calendar', 
+    route: '/(tabs)/meal-planner' 
+  },
 ];
 
 const TAB_WIDTH = width / TABS.length;
@@ -76,8 +101,14 @@ export default function BottomNav() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        {/* Active Background Indicator - Slides to active tab */}
+      {/* ✅ Tomato Red Background */}
+      <LinearGradient
+        colors={['#E53935', '#C62828']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.container}
+      >
+        {/* ✅ Active White Background Indicator - Slides to active tab */}
         <Animated.View 
           style={[
             styles.activeBackground,
@@ -98,11 +129,17 @@ export default function BottomNav() {
               onPress={() => handlePress(tab.route, index)}
               activeOpacity={0.7}
             >
-              <Animated.View style={{ transform: [{ scale: iconScale }] }}>
-                <MaterialIcons
-                  name={tab.icon as any}
-                  size={26}
-                  color={active ? '#FFFFFF' : '#666666'}
+              <Animated.View 
+                style={[
+                  styles.iconContainer,
+                  { transform: [{ scale: iconScale }] },
+                  active && styles.iconContainerActive,
+                ]}
+              >
+                <Ionicons
+                  name={active ? tab.activeIcon : tab.icon as any}
+                  size={22}
+                  color={active ? '#E53935' : 'rgba(255,255,255,0.7)'}
                 />
               </Animated.View>
               
@@ -111,61 +148,71 @@ export default function BottomNav() {
                   styles.tabLabel,
                   active && styles.tabLabelActive,
                 ]}
+                numberOfLines={1}
               >
                 {tab.name}
               </Text>
             </TouchableOpacity>
           );
         })}
-      </View>
+      </LinearGradient>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#E53935',
+    marginBottom: 12
   },
   container: {
     flexDirection: 'row',
     height: 68,
-    backgroundColor: '#FFFFFF',
-    paddingBottom: 6,
+    paddingBottom: 8,
+    paddingTop: 4,
     position: 'relative',
-    borderTopWidth: 1,
-    borderTopColor: '#EEEEEE',
   },
   tab: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 4,
+    paddingVertical: 2,
     position: 'relative',
     zIndex: 2,
   },
+  iconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconContainerActive: {
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 4,
+  },
   tabLabel: {
-    fontSize: 11,
-    color: '#000000',
+    fontSize: 9,
+    color: 'rgba(255,255,255,0.6)',
     marginTop: 2,
     fontWeight: '500',
-    letterSpacing: 0.3,
+    letterSpacing: 0.2,
   },
   tabLabelActive: {
     color: '#FFFFFF',
-    fontWeight: '600',
+    fontWeight: '700',
   },
   activeBackground: {
     position: 'absolute',
-    top: 6,
-    width: 60,
-    height: 56,
-    borderRadius: 16,
-    backgroundColor: '#E53935', // Red color
-    marginHorizontal: (TAB_WIDTH - 60) / 2,
-    shadowColor: '#E53935',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    elevation: 6,
+    top: 4,
+    width: ACTIVE_INDICATOR_SIZE,
+    height: ACTIVE_INDICATOR_SIZE,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    marginHorizontal: (TAB_WIDTH - ACTIVE_INDICATOR_SIZE) / 2,
   },
 });

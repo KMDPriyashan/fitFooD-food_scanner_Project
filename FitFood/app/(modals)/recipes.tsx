@@ -24,6 +24,7 @@ import {
   filterRecipesFromDB,
   getAllRecipes
 } from '../services/recipeService';
+import BottomNav from '../../components/BottomNav';
 
 const { width } = Dimensions.get('window');
 
@@ -565,13 +566,23 @@ export default function RecipesScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="light-content" backgroundColor="#E53935" />
-      {showResults ? renderRecipes() : renderForm()}
+      <View style={styles.content}>
+        {showResults ? renderRecipes() : renderForm()}
+      </View>
+      {/* ✅ Bottom Navigation */}
+      <BottomNav />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#F5F7FA' },
+  safeArea: { 
+    flex: 1, 
+    backgroundColor: '#F5F7FA' 
+  },
+  content: {
+    flex: 1,
+  },
   headerGradient: {
     paddingHorizontal: 20,
     paddingTop: Platform.OS === 'ios' ? 50 : 40,
@@ -608,8 +619,14 @@ const styles = StyleSheet.create({
     marginTop: 4,
     textAlign: 'center',
   },
-  formContainer: { flex: 1, backgroundColor: '#F5F7FA' },
-  form: { padding: 16, paddingBottom: 40 },
+  formContainer: { 
+    flex: 1, 
+    backgroundColor: '#F5F7FA' 
+  },
+  form: { 
+    padding: 16, 
+    paddingBottom: 40 
+  },
   
   sectionCard: {
     backgroundColor: '#FFFFFF',
@@ -640,8 +657,12 @@ const styles = StyleSheet.create({
     color: '#94A3B8',
     marginBottom: 10,
   },
-  row: { flexDirection: 'row' },
-  inputGroup: { marginBottom: 0 },
+  row: { 
+    flexDirection: 'row' 
+  },
+  inputGroup: { 
+    marginBottom: 0 
+  },
   label: {
     fontSize: 13,
     fontWeight: '600',
@@ -667,9 +688,16 @@ const styles = StyleSheet.create({
     color: '#1E293B',
     paddingRight: 4,
   },
-  textArea: { minHeight: 56, textAlignVertical: 'top' },
+  textArea: { 
+    minHeight: 56, 
+    textAlignVertical: 'top' 
+  },
   
-  chipContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  chipContainer: { 
+    flexDirection: 'row', 
+    flexWrap: 'wrap', 
+    gap: 8 
+  },
   chip: {
     paddingHorizontal: 14,
     paddingVertical: 8,
@@ -682,8 +710,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#FEE2E2',
     borderColor: '#E53935',
   },
-  chipText: { fontSize: 13, color: '#64748B' },
-  chipTextActive: { color: '#E53935', fontWeight: '600' },
+  chipText: { 
+    fontSize: 13, 
+    color: '#64748B' 
+  },
+  chipTextActive: { 
+    color: '#E53935', 
+    fontWeight: '600' 
+  },
   
   generateBtn: {
     borderRadius: 14,
@@ -702,7 +736,9 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     gap: 10,
   },
-  generateBtnDisabled: { opacity: 0.7 },
+  generateBtnDisabled: { 
+    opacity: 0.7 
+  },
   generateBtnText: {
     color: '#FFFFFF',
     fontSize: 18,
@@ -752,7 +788,10 @@ const styles = StyleSheet.create({
   // ============================================
   // RESULTS STYLES - REDESIGNED
   // ============================================
-  resultsContainer: { flex: 1, backgroundColor: '#F5F7FA' },
+  resultsContainer: { 
+    flex: 1, 
+    backgroundColor: '#F5F7FA' 
+  },
   resultsHeaderGradient: {
     paddingHorizontal: 16,
     paddingTop: Platform.OS === 'ios' ? 50 : 40,
@@ -889,7 +928,11 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 4,
   },
-  rankText: { color: '#FFFFFF', fontSize: 11, fontWeight: 'bold' },
+  rankText: { 
+    color: '#FFFFFF', 
+    fontSize: 11, 
+    fontWeight: 'bold' 
+  },
   
   recipeHeader: {
     flexDirection: 'row',
@@ -897,9 +940,20 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     marginTop: 4,
   },
-  recipeTitleContainer: { flex: 1, marginRight: 8 },
-  recipeName: { fontSize: 17, fontWeight: '700', color: '#1E293B' },
-  recipeNameSi: { fontSize: 13, color: '#94A3B8', marginTop: 2 },
+  recipeTitleContainer: { 
+    flex: 1, 
+    marginRight: 8 
+  },
+  recipeName: { 
+    fontSize: 17, 
+    fontWeight: '700', 
+    color: '#1E293B' 
+  },
+  recipeNameSi: { 
+    fontSize: 13, 
+    color: '#94A3B8', 
+    marginTop: 2 
+  },
   healthScoreBadge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -907,18 +961,36 @@ const styles = StyleSheet.create({
     minWidth: 40,
     alignItems: 'center',
   },
-  healthScoreText: { color: '#FFFFFF', fontSize: 14, fontWeight: 'bold' },
+  healthScoreText: { 
+    color: '#FFFFFF', 
+    fontSize: 14, 
+    fontWeight: 'bold' 
+  },
   
-  dietaryTags: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 8, gap: 4 },
+  dietaryTags: { 
+    flexDirection: 'row', 
+    flexWrap: 'wrap', 
+    marginTop: 8, 
+    gap: 4 
+  },
   dietaryTag: {
     backgroundColor: '#FEE2E2',
     paddingHorizontal: 10,
     paddingVertical: 3,
     borderRadius: 12,
   },
-  dietaryTagText: { fontSize: 10, color: '#E53935', fontWeight: '600' },
+  dietaryTagText: { 
+    fontSize: 10, 
+    color: '#E53935', 
+    fontWeight: '600' 
+  },
   
-  recipeDescription: { fontSize: 14, color: '#64748B', marginTop: 8, lineHeight: 20 },
+  recipeDescription: { 
+    fontSize: 14, 
+    color: '#64748B', 
+    marginTop: 8, 
+    lineHeight: 20 
+  },
   
   nutritionRow: {
     flexDirection: 'row',
@@ -930,9 +1002,19 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#F1F5F9',
   },
-  nutritionItem: { alignItems: 'center' },
-  nutritionValue: { fontSize: 15, fontWeight: '700', color: '#E53935' },
-  nutritionLabel: { fontSize: 10, color: '#94A3B8', marginTop: 2 },
+  nutritionItem: { 
+    alignItems: 'center' 
+  },
+  nutritionValue: { 
+    fontSize: 15, 
+    fontWeight: '700', 
+    color: '#E53935' 
+  },
+  nutritionLabel: { 
+    fontSize: 10, 
+    color: '#94A3B8', 
+    marginTop: 2 
+  },
   
   recommendationBox: {
     backgroundColor: '#E8F5E9',
@@ -942,12 +1024,33 @@ const styles = StyleSheet.create({
     borderLeftWidth: 4,
     borderLeftColor: '#4CAF50',
   },
-  recommendationLabel: { fontSize: 12, fontWeight: '600', color: '#2E7D32', marginBottom: 2 },
-  recommendationText: { fontSize: 13, color: '#1E293B', lineHeight: 18 },
+  recommendationLabel: { 
+    fontSize: 12, 
+    fontWeight: '600', 
+    color: '#2E7D32', 
+    marginBottom: 2 
+  },
+  recommendationText: { 
+    fontSize: 13, 
+    color: '#1E293B', 
+    lineHeight: 18 
+  },
   
-  quickStats: { flexDirection: 'row', alignItems: 'center', marginTop: 10, gap: 16 },
-  quickStat: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  quickStatText: { fontSize: 12, color: '#94A3B8' },
+  quickStats: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    marginTop: 10, 
+    gap: 16 
+  },
+  quickStat: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    gap: 4 
+  },
+  quickStatText: { 
+    fontSize: 12, 
+    color: '#94A3B8' 
+  },
   
   detailsBtn: {
     marginTop: 12,
@@ -956,7 +1059,11 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#F1F5F9',
   },
-  detailsBtnText: { fontSize: 13, fontWeight: '600', color: '#E53935' },
+  detailsBtnText: { 
+    fontSize: 13, 
+    fontWeight: '600', 
+    color: '#E53935' 
+  },
   
   emptyState: {
     flex: 1,
