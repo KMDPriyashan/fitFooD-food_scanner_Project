@@ -35,7 +35,6 @@ const STORAGE_KEYS = {
   PRODUCTS: '@marketplace_products',
 };
 
-// Shop Interface
 interface Shop {
   id: string;
   name: string;
