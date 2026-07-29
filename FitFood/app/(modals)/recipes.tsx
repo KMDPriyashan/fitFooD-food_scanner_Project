@@ -31,7 +31,7 @@ const { width } = Dimensions.get('window');
 const DIETARY_OPTIONS = [
   { id: 'vegetarian', label: '🌱 Vegetarian' },
   { id: 'vegan', label: '🌿 Vegan' },
-  { id: 'gluten_free', label: '🚫 gluten_free' },
+  { id: 'gluten_free', label: '🚫 Gluten Free' },
   { id: 'high-protein', label: '💪 High Protein' },
   { id: 'low-carb', label: '🥑 Low Carb' },
   { id: 'high-fiber', label: '🌾 High Fiber' },
@@ -41,9 +41,9 @@ const DIETARY_OPTIONS = [
 const HEALTH_GOALS = [
   { id: 'weight-loss', label: '⚖️ Weight Loss' },
   { id: 'muscle-gain', label: '💪 Muscle Gain' },
-  { id: 'diabetes-management', label: '🩸 Diabetes_Management' },
+  { id: 'diabetes-management', label: '🩸 Diabetes' },
   { id: 'heart-health', label: '❤️ Heart Health' },
-  { id: 'general-wellness', label: '😊 General_Wellness' },
+  { id: 'general-wellness', label: '😊 Wellness' },
 ];
 
 const HEALTH_CONDITIONS = [
@@ -60,7 +60,6 @@ export default function RecipesScreen() {
   const [showResults, setShowResults] = useState(false);
   const [showFallback, setShowFallback] = useState(false);
   
-  // Form state
   const [age, setAge] = useState('');
   const [weight, setWeight] = useState('');
   const [selectedConditions, setSelectedConditions] = useState<string[]>([]);
@@ -79,7 +78,7 @@ export default function RecipesScreen() {
 
   const handleGenerateRecipes = async () => {
     if (!age || !weight) {
-      Alert.alert('⚠️ Missing Information', 'Age and weight are required to find recipes');
+      Alert.alert('⚠️ Missing Info', 'Age and weight are required');
       return;
     }
 
@@ -111,7 +110,7 @@ export default function RecipesScreen() {
       setShowResults(true);
     } catch (error) {
       console.error('Error:', error);
-      Alert.alert('Error', 'Failed to generate recipes. Please try again.');
+      Alert.alert('Error', 'Failed to generate recipes');
       setShowFallback(true);
       try {
         const allRecipes = await getAllRecipes();
@@ -134,80 +133,69 @@ export default function RecipesScreen() {
     }
   };
 
-  // ============================================
-  // RENDER FORM - REDESIGNED
-  // ============================================
+  // ✅ Simplified Form
   const renderForm = () => (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView style={styles.formContainer} showsVerticalScrollIndicator={false}>
-        {/* ✅ Redesigned Header with Gradient */}
-        <LinearGradient
-          colors={['#E53935', '#C62828']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={styles.headerGradient}
-        >
-          <View style={styles.headerContent}>
-            <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-              <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
-            </TouchableOpacity>
-            <View style={styles.headerCenter}>
-              <Text style={styles.headerTitle}>🍽️ Smart Recipes</Text>
-              <Text style={styles.headerSubtitle}>Find recipes based on your health profile</Text>
+        {/* Simple Header */}
+        <View style={styles.header}>
+          <LinearGradient
+            colors={['#E53935', '#C62828']}
+            style={styles.headerGradient}
+          >
+            <View style={styles.headerContent}>
+              <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+                <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+              </TouchableOpacity>
+              <Text style={styles.headerTitle}>🍽️ Recipes</Text>
+              <View style={{ width: 40 }} />
             </View>
-            <View style={{ width: 40 }} />
-          </View>
-        </LinearGradient>
+            <Text style={styles.headerSubtitle}>Find healthy recipes for you</Text>
+          </LinearGradient>
+        </View>
 
         <View style={styles.form}>
-          {/* ✅ Redesigned Personal Info Card */}
-          <View style={styles.sectionCard}>
-            <View style={styles.sectionIconRow}>
-              <Ionicons name="person-circle-outline" size={24} color="#E53935" />
-              <Text style={styles.sectionTitle}>Personal Info</Text>
+          {/* Step 1: Personal Info */}
+          <View style={styles.stepContainer}>
+            <View style={styles.stepIndicator}>
+              <Text style={styles.stepNumber}>1</Text>
+              <Text style={styles.stepLabel}>Personal Info</Text>
             </View>
             <View style={styles.row}>
               <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
-                <Text style={styles.label}>Age *</Text>
-                <View style={styles.inputWrapper}>
-                  <Ionicons name="calendar-outline" size={18} color="#94A3B8" style={styles.inputIcon} />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="e.g., 25"
-                    placeholderTextColor="#94A3B8"
-                    value={age}
-                    onChangeText={setAge}
-                    keyboardType="numeric"
-                  />
-                </View>
+                <Text style={styles.label}>Age</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="25"
+                  placeholderTextColor="#94A3B8"
+                  value={age}
+                  onChangeText={setAge}
+                  keyboardType="numeric"
+                />
               </View>
               <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
-                <Text style={styles.label}>Weight (kg) *</Text>
-                <View style={styles.inputWrapper}>
-                  <Ionicons name="fitness-outline" size={18} color="#94A3B8" style={styles.inputIcon} />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="e.g., 70"
-                    placeholderTextColor="#94A3B8"
-                    value={weight}
-                    onChangeText={setWeight}
-                    keyboardType="numeric"
-                  />
-                </View>
+                <Text style={styles.label}>Weight (kg)</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="70"
+                  placeholderTextColor="#94A3B8"
+                  value={weight}
+                  onChangeText={setWeight}
+                  keyboardType="numeric"
+                />
               </View>
             </View>
           </View>
 
-          {/* ✅ Redesigned Dietary Preferences */}
-          <View style={styles.sectionCard}>
-            <View style={styles.sectionIconRow}>
-              <Ionicons name="restaurant-outline" size={24} color="#E53935" />
-              <Text style={styles.sectionTitle}>Dietary Preferences</Text>
+          {/* Step 2: Dietary Preferences */}
+          <View style={styles.stepContainer}>
+            <View style={styles.stepIndicator}>
+              <Text style={styles.stepNumber}>2</Text>
+              <Text style={styles.stepLabel}>Dietary Preferences</Text>
             </View>
-            <Text style={styles.sectionSubtitle}>Select all that apply</Text>
             <View style={styles.chipContainer}>
               {DIETARY_OPTIONS.map((option) => (
                 <TouchableOpacity
@@ -229,13 +217,12 @@ export default function RecipesScreen() {
             </View>
           </View>
 
-          {/* ✅ Redesigned Health Goals */}
-          <View style={styles.sectionCard}>
-            <View style={styles.sectionIconRow}>
-              <Ionicons name="flag-outline" size={24} color="#E53935" />
-              <Text style={styles.sectionTitle}>Health Goals</Text>
+          {/* Step 3: Health Goals */}
+          <View style={styles.stepContainer}>
+            <View style={styles.stepIndicator}>
+              <Text style={styles.stepNumber}>3</Text>
+              <Text style={styles.stepLabel}>Health Goals</Text>
             </View>
-            <Text style={styles.sectionSubtitle}>Select all that apply</Text>
             <View style={styles.chipContainer}>
               {HEALTH_GOALS.map((goal) => (
                 <TouchableOpacity
@@ -257,13 +244,12 @@ export default function RecipesScreen() {
             </View>
           </View>
 
-          {/* ✅ Redesigned Health Conditions */}
-          <View style={styles.sectionCard}>
-            <View style={styles.sectionIconRow}>
-              <Ionicons name="medical-outline" size={24} color="#E53935" />
-              <Text style={styles.sectionTitle}>Health Conditions</Text>
+          {/* Step 4: Health Conditions */}
+          <View style={styles.stepContainer}>
+            <View style={styles.stepIndicator}>
+              <Text style={styles.stepNumber}>4</Text>
+              <Text style={styles.stepLabel}>Health Conditions</Text>
             </View>
-            <Text style={styles.sectionSubtitle}>Select any that apply</Text>
             <View style={styles.chipContainer}>
               {HEALTH_CONDITIONS.map((condition) => (
                 <TouchableOpacity
@@ -285,85 +271,57 @@ export default function RecipesScreen() {
             </View>
           </View>
 
-          {/* ✅ Redesigned Ingredients */}
-          <View style={styles.sectionCard}>
-            <View style={styles.sectionIconRow}>
-              <Ionicons name="basket-outline" size={24} color="#E53935" />
-              <Text style={styles.sectionTitle}>Available Ingredients</Text>
+          {/* Step 5: Ingredients */}
+          <View style={styles.stepContainer}>
+            <View style={styles.stepIndicator}>
+              <Text style={styles.stepNumber}>5</Text>
+              <Text style={styles.stepLabel}>Your Ingredients</Text>
             </View>
-            <Text style={styles.sectionSubtitle}>Separate with commas (e.g., chicken, rice)</Text>
-            <View style={styles.inputWrapper}>
-              <Ionicons name="search-outline" size={18} color="#94A3B8" style={styles.inputIcon} />
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                placeholder="e.g., chicken, rice, vegetables, eggs"
-                placeholderTextColor="#94A3B8"
-                value={ingredients}
-                onChangeText={setIngredients}
-                multiline
-                numberOfLines={2}
-              />
-            </View>
+            <TextInput
+              style={[styles.input, styles.textArea]}
+              placeholder="chicken, rice, vegetables"
+              placeholderTextColor="#94A3B8"
+              value={ingredients}
+              onChangeText={setIngredients}
+              multiline
+              numberOfLines={2}
+            />
           </View>
 
-          {/* ✅ Redesigned Generate Button */}
+          {/* Find Recipes Button */}
           <TouchableOpacity
-            style={[styles.generateBtn, loading && styles.generateBtnDisabled]}
+            style={[styles.findBtn, loading && styles.findBtnDisabled]}
             onPress={handleGenerateRecipes}
             disabled={loading}
           >
             <LinearGradient
               colors={['#E53935', '#C62828']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.generateGradient}
+              style={styles.findGradient}
             >
               {loading ? (
                 <ActivityIndicator color="#FFFFFF" size="small" />
               ) : (
                 <>
-                  <Ionicons name="sparkles" size={22} color="#FFFFFF" />
-                  <Text style={styles.generateBtnText}>Find Recipes</Text>
+                  <Ionicons name="search" size={22} color="#FFFFFF" />
+                  <Text style={styles.findBtnText}>Find Recipes</Text>
                 </>
               )}
             </LinearGradient>
           </TouchableOpacity>
 
-          {/* ✅ Redesigned Tips Card */}
-          <View style={styles.tipsCard}>
-            <View style={styles.tipsHeader}>
-              <Ionicons name="bulb-outline" size={20} color="#F57C00" />
-              <Text style={styles.tipsTitle}>Quick Tips</Text>
-            </View>
-            <View style={styles.tipItem}>
-              <View style={styles.tipBullet} />
-              <Text style={styles.tipText}>Select at least one dietary preference for better results</Text>
-            </View>
-            <View style={styles.tipItem}>
-              <View style={styles.tipBullet} />
-              <Text style={styles.tipText}>Add ingredients you have at home</Text>
-            </View>
-            <View style={styles.tipItem}>
-              <View style={styles.tipBullet} />
-              <Text style={styles.tipText}>The more you select, the better the matches</Text>
-            </View>
-          </View>
+          
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 
-  // ============================================
-  // RENDER RECIPES - REDESIGNED
-  // ============================================
+  // ✅ Simplified Results
   const renderRecipes = () => (
     <View style={styles.resultsContainer}>
-      {/* ✅ Redesigned Results Header */}
+      {/* Results Header */}
       <LinearGradient
         colors={['#E53935', '#C62828']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={styles.resultsHeaderGradient}
+        style={styles.resultsHeader}
       >
         <View style={styles.resultsHeaderContent}>
           <TouchableOpacity 
@@ -376,75 +334,34 @@ export default function RecipesScreen() {
           >
             <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
           </TouchableOpacity>
-          <Text style={styles.resultsTitle}>Your Recipes</Text>
+          <Text style={styles.resultsTitle}>Recipes</Text>
           <TouchableOpacity 
-            style={styles.modifyBtn}
+            style={styles.resultsModifyBtn}
             onPress={() => setShowResults(false)}
           >
-            <Ionicons name="pencil-outline" size={20} color="#FFFFFF" />
+            <Ionicons name="options-outline" size={22} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
-        <Text style={styles.resultsSubtitle}>
-          🎯 Found {recipes.length} recipes for you
+        <Text style={styles.resultsCount}>
+          {recipes.length} recipes found
         </Text>
       </LinearGradient>
 
-      {/* Results Info Section */}
-      <View style={styles.resultsInfoSection}>
-        {showFallback ? (
-          <View style={styles.fallbackContainer}>
-            <Ionicons name="alert-circle" size={20} color="#FF9800" />
-            <View style={styles.fallbackContent}>
-              <Text style={styles.fallbackText}>No exact matches found</Text>
-              <Text style={styles.fallbackHint}>Showing popular recipes instead</Text>
-            </View>
-          </View>
-        ) : (
-          <View style={styles.matchedCriteriaContainer}>
-            <Text style={styles.criteriaLabel}>✅ Matched Criteria:</Text>
-            <View style={styles.criteriaChips}>
-              {selectedDietary.length > 0 && (
-                <View style={styles.criteriaChip}>
-                  <Ionicons name="checkmark-circle" size={14} color="#4CAF50" />
-                  <Text style={styles.criteriaText}>
-                    {selectedDietary.length} dietary preference{selectedDietary.length !== 1 ? 's' : ''}
-                  </Text>
-                </View>
-              )}
-              {selectedGoals.length > 0 && (
-                <View style={styles.criteriaChip}>
-                  <Ionicons name="checkmark-circle" size={14} color="#4CAF50" />
-                  <Text style={styles.criteriaText}>
-                    {selectedGoals.length} health goal{selectedGoals.length !== 1 ? 's' : ''}
-                  </Text>
-                </View>
-              )}
-              {selectedConditions.length > 0 && (
-                <View style={styles.criteriaChip}>
-                  <Ionicons name="checkmark-circle" size={14} color="#4CAF50" />
-                  <Text style={styles.criteriaText}>
-                    {selectedConditions.length} condition{selectedConditions.length !== 1 ? 's' : ''}
-                  </Text>
-                </View>
-              )}
-              {ingredients.trim().length > 0 && (
-                <View style={styles.criteriaChip}>
-                  <Ionicons name="checkmark-circle" size={14} color="#4CAF50" />
-                  <Text style={styles.criteriaText}>Your ingredients included</Text>
-                </View>
-              )}
-            </View>
-          </View>
-        )}
-      </View>
+      {/* Fallback Message */}
+      {showFallback && (
+        <View style={styles.fallbackBox}>
+          <Ionicons name="alert-circle" size={20} color="#FF9800" />
+          <Text style={styles.fallbackText}>Showing popular recipes</Text>
+        </View>
+      )}
 
       {/* Recipes List */}
       <ScrollView style={styles.recipesList} showsVerticalScrollIndicator={false}>
         {recipes.length === 0 ? (
           <View style={styles.emptyState}>
             <Ionicons name="restaurant-outline" size={60} color="#D1D5DB" />
-            <Text style={styles.emptyStateText}>No recipes available</Text>
-            <Text style={styles.emptyStateHint}>Try adjusting your preferences</Text>
+            <Text style={styles.emptyStateText}>No recipes found</Text>
+            <Text style={styles.emptyStateHint}>Try changing your preferences</Text>
           </View>
         ) : (
           recipes.map((recipe, index) => (
@@ -453,13 +370,10 @@ export default function RecipesScreen() {
               style={styles.recipeCard}
               activeOpacity={0.9}
             >
-              {/* Rank Badge */}
-              <View style={styles.rankBadge}>
-                <Text style={styles.rankText}>#{index + 1}</Text>
-              </View>
-
-              {/* Recipe Header */}
               <View style={styles.recipeHeader}>
+                <View style={styles.rankBadge}>
+                  <Text style={styles.rankText}>#{index + 1}</Text>
+                </View>
                 <View style={styles.recipeTitleContainer}>
                   <Text style={styles.recipeName}>{recipe.name}</Text>
                   {recipe.name_si && (
@@ -485,7 +399,9 @@ export default function RecipesScreen() {
                 </View>
               )}
 
-              <Text style={styles.recipeDescription}>{recipe.description}</Text>
+              <Text style={styles.recipeDescription} numberOfLines={2}>
+                {recipe.description}
+              </Text>
 
               {/* Nutrition */}
               <View style={styles.nutritionRow}>
@@ -507,23 +423,15 @@ export default function RecipesScreen() {
                 </View>
               </View>
 
-              {/* Why Recommended */}
-              {recipe.why_recommended && (
-                <View style={styles.recommendationBox}>
-                  <Text style={styles.recommendationLabel}>💡 Why This is Recommended</Text>
-                  <Text style={styles.recommendationText}>{recipe.why_recommended}</Text>
-                </View>
-              )}
-
               {/* Quick Stats */}
               <View style={styles.quickStats}>
                 <View style={styles.quickStat}>
-                  <Ionicons name="time-outline" size={16} color="#94A3B8" />
+                  <Ionicons name="time-outline" size={14} color="#94A3B8" />
                   <Text style={styles.quickStatText}>{recipe.cooking_time}m</Text>
                 </View>
                 <View style={styles.quickStat}>
-                  <Ionicons name="people-outline" size={16} color="#94A3B8" />
-                  <Text style={styles.quickStatText}>{recipe.servings} servings</Text>
+                  <Ionicons name="people-outline" size={14} color="#94A3B8" />
+                  <Text style={styles.quickStatText}>{recipe.servings}</Text>
                 </View>
                 <View style={styles.quickStat}>
                   <Text style={[styles.quickStatText, { color: getDifficultyColor(recipe.difficulty) }]}>
@@ -532,10 +440,13 @@ export default function RecipesScreen() {
                 </View>
               </View>
 
-              <TouchableOpacity style={styles.detailsBtn} onPress={() => Alert.alert(
-                '📖 Recipe Details',
-                `${recipe.name}\n\n${'━'.repeat(30)}\n\n📋 INGREDIENTS:\n${recipe.ingredients?.map((i: string, idx: number) => `  ${idx + 1}. ${i}`).join('\n') || 'Not available'}\n\n${'━'.repeat(30)}\n\n👨‍🍳 INSTRUCTIONS:\n${recipe.instructions?.map((i: string, idx: number) => `  ${idx + 1}. ${i}`).join('\n') || 'Not available'}`
-              )}>
+              <TouchableOpacity 
+                style={styles.detailsBtn} 
+                onPress={() => Alert.alert(
+                  '📖 Recipe Details',
+                  `${recipe.name}\n\n${'━'.repeat(30)}\n\n📋 INGREDIENTS:\n${recipe.ingredients?.map((i: string, idx: number) => `  ${idx + 1}. ${i}`).join('\n') || 'Not available'}\n\n${'━'.repeat(30)}\n\n👨‍🍳 INSTRUCTIONS:\n${recipe.instructions?.map((i: string, idx: number) => `  ${idx + 1}. ${i}`).join('\n') || 'Not available'}`
+                )}
+              >
                 <Text style={styles.detailsBtnText}>View Full Recipe →</Text>
               </TouchableOpacity>
             </TouchableOpacity>
@@ -544,22 +455,18 @@ export default function RecipesScreen() {
       </ScrollView>
 
       {/* Footer */}
-      <View style={styles.footerContainer}>
-        <TouchableOpacity 
-          style={styles.modifySearchBtn}
-          onPress={() => setShowResults(false)}
+      <TouchableOpacity 
+        style={styles.modifySearchBtn}
+        onPress={() => setShowResults(false)}
+      >
+        <LinearGradient
+          colors={['#E53935', '#C62828']}
+          style={styles.modifySearchGradient}
         >
-          <LinearGradient
-            colors={['#E53935', '#C62828']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.modifySearchGradient}
-          >
-            <Ionicons name="pencil" size={18} color="#FFFFFF" />
-            <Text style={styles.modifySearchBtnText}>Modify Search</Text>
-          </LinearGradient>
-        </TouchableOpacity>
-      </View>
+          <Ionicons name="options-outline" size={18} color="#FFFFFF" />
+          <Text style={styles.modifySearchBtnText}>Modify Search</Text>
+        </LinearGradient>
+      </TouchableOpacity>
     </View>
   );
 
@@ -569,7 +476,6 @@ export default function RecipesScreen() {
       <View style={styles.content}>
         {showResults ? renderRecipes() : renderForm()}
       </View>
-      {/* ✅ Bottom Navigation */}
       <BottomNav />
     </SafeAreaView>
   );
@@ -578,27 +484,27 @@ export default function RecipesScreen() {
 const styles = StyleSheet.create({
   safeArea: { 
     flex: 1, 
-    backgroundColor: '#F5F7FA' 
+    backgroundColor: '#F8FAFC' 
   },
   content: {
     flex: 1,
+  },
+  
+  // ===== FORM STYLES =====
+  header: {
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
+    overflow: 'hidden',
   },
   headerGradient: {
     paddingHorizontal: 20,
     paddingTop: Platform.OS === 'ios' ? 50 : 40,
     paddingBottom: 20,
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
   },
   headerContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-  },
-  headerCenter: {
-    flex: 1,
-    alignItems: 'center',
-    marginTop: 35,
   },
   backBtn: {
     width: 40,
@@ -614,48 +520,54 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   headerSubtitle: {
-    fontSize: 12,
+    fontSize: 13,
     color: 'rgba(255,255,255,0.8)',
     marginTop: 4,
     textAlign: 'center',
   },
   formContainer: { 
     flex: 1, 
-    backgroundColor: '#F5F7FA' 
+    backgroundColor: '#F8FAFC' 
   },
   form: { 
     padding: 16, 
     paddingBottom: 40 
   },
   
-  sectionCard: {
+  stepContainer: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    borderRadius: 14,
     padding: 16,
-    marginBottom: 14,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 3,
+    marginBottom: 12,
     borderWidth: 1,
     borderColor: '#F1F5F9',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  sectionIconRow: {
+  stepIndicator: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 10,
     gap: 8,
   },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1E293B',
-  },
-  sectionSubtitle: {
+  stepNumber: {
+    backgroundColor: '#E53935',
+    color: '#FFFFFF',
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    textAlign: 'center',
     fontSize: 12,
-    color: '#94A3B8',
-    marginBottom: 10,
+    fontWeight: '700',
+    lineHeight: 24,
+  },
+  stepLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1E293B',
   },
   row: { 
     flexDirection: 'row' 
@@ -665,28 +577,19 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#1E293B',
     marginBottom: 6,
   },
-  inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  input: {
     borderWidth: 1,
     borderColor: '#E8ECF0',
-    borderRadius: 12,
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 12,
-  },
-  inputIcon: {
-    marginRight: 8,
-  },
-  input: {
-    flex: 1,
+    borderRadius: 10,
+    paddingHorizontal: 14,
     paddingVertical: 10,
     fontSize: 14,
     color: '#1E293B',
-    paddingRight: 4,
+    backgroundColor: '#FFFFFF',
   },
   textArea: { 
     minHeight: 56, 
@@ -696,13 +599,13 @@ const styles = StyleSheet.create({
   chipContainer: { 
     flexDirection: 'row', 
     flexWrap: 'wrap', 
-    gap: 8 
+    gap: 6 
   },
   chip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#F8FAFC',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: '#F1F5F9',
     borderWidth: 1,
     borderColor: '#E8ECF0',
   },
@@ -711,7 +614,7 @@ const styles = StyleSheet.create({
     borderColor: '#E53935',
   },
   chipText: { 
-    fontSize: 13, 
+    fontSize: 12, 
     color: '#64748B' 
   },
   chipTextActive: { 
@@ -719,80 +622,55 @@ const styles = StyleSheet.create({
     fontWeight: '600' 
   },
   
-  generateBtn: {
+  findBtn: {
     borderRadius: 14,
     overflow: 'hidden',
     marginTop: 8,
     shadowColor: '#E53935',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.2,
     shadowRadius: 12,
-    elevation: 6,
+    elevation: 4,
   },
-  generateGradient: {
+  findGradient: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 16,
-    gap: 10,
+    paddingVertical: 14,
+    gap: 8,
   },
-  generateBtnDisabled: { 
+  findBtnDisabled: { 
     opacity: 0.7 
   },
-  generateBtnText: {
+  findBtnText: {
     color: '#FFFFFF',
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '700',
-    letterSpacing: 0.5,
   },
   
-  tipsCard: {
+  tipBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#FFF8E1',
-    borderRadius: 16,
-    padding: 16,
+    padding: 12,
+    borderRadius: 10,
     marginTop: 12,
+    gap: 8,
     borderWidth: 1,
     borderColor: '#FFE0B2',
   },
-  tipsHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 8,
-  },
-  tipsTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#F57C00',
-  },
-  tipItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 4,
-    gap: 8,
-  },
-  tipBullet: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#F57C00',
-    marginTop: 6,
-  },
   tipText: {
-    flex: 1,
     fontSize: 13,
     color: '#4A3000',
-    lineHeight: 20,
+    flex: 1,
   },
 
-  // ============================================
-  // RESULTS STYLES - REDESIGNED
-  // ============================================
+  // ===== RESULTS STYLES =====
   resultsContainer: { 
     flex: 1, 
-    backgroundColor: '#F5F7FA' 
+    backgroundColor: '#F8FAFC' 
   },
-  resultsHeaderGradient: {
+  resultsHeader: {
     paddingHorizontal: 16,
     paddingTop: Platform.OS === 'ios' ? 50 : 40,
     paddingBottom: 16,
@@ -817,7 +695,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#FFFFFF',
   },
-  modifyBtn: {
+  resultsModifyBtn: {
     width: 40,
     height: 40,
     borderRadius: 20,
@@ -825,112 +703,63 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  resultsSubtitle: {
+  resultsCount: {
     fontSize: 13,
     color: 'rgba(255,255,255,0.9)',
     marginTop: 8,
     textAlign: 'center',
   },
   
-  resultsInfoSection: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
-  },
-  fallbackContainer: {
+  fallbackBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    margin: 12,
     padding: 10,
     backgroundColor: '#FFF3E0',
     borderRadius: 10,
-    borderLeftWidth: 4,
-    borderLeftColor: '#FF9800',
-  },
-  fallbackContent: {
-    flex: 1,
+    gap: 8,
   },
   fallbackText: {
     fontSize: 13,
-    fontWeight: '600',
     color: '#E65100',
-  },
-  fallbackHint: {
-    fontSize: 12,
-    color: '#BF360C',
-    marginTop: 2,
-  },
-  matchedCriteriaContainer: {
-    marginTop: 4,
-  },
-  criteriaLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#1E293B',
-    marginBottom: 6,
-  },
-  criteriaChips: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-  },
-  criteriaChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: '#E8F5E9',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 10,
-  },
-  criteriaText: {
-    fontSize: 11,
-    color: '#2E7D32',
     fontWeight: '500',
   },
   
   recipesList: { 
     flex: 1,
     paddingHorizontal: 16,
-    paddingTop: 12,
+    paddingTop: 8,
     paddingBottom: 20,
   },
   
   recipeCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 14,
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    elevation: 3,
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
     position: 'relative',
-    marginTop: 25,
+    marginTop: 20,
     borderWidth: 1,
     borderColor: '#F1F5F9',
   },
   rankBadge: {
     position: 'absolute',
-    top: -8,
-    left: -8,
+    top: -6,
+    left: -6,
     backgroundColor: '#E53935',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
     zIndex: 1,
-    shadowColor: '#E53935',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 4,
   },
   rankText: { 
     color: '#FFFFFF', 
-    fontSize: 11, 
+    fontSize: 10, 
     fontWeight: 'bold' 
   },
   
@@ -945,60 +774,60 @@ const styles = StyleSheet.create({
     marginRight: 8 
   },
   recipeName: { 
-    fontSize: 17, 
+    fontSize: 16, 
     fontWeight: '700', 
     color: '#1E293B' 
   },
   recipeNameSi: { 
-    fontSize: 13, 
+    fontSize: 12, 
     color: '#94A3B8', 
     marginTop: 2 
   },
   healthScoreBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    minWidth: 40,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+    minWidth: 32,
     alignItems: 'center',
   },
   healthScoreText: { 
     color: '#FFFFFF', 
-    fontSize: 14, 
+    fontSize: 12, 
     fontWeight: 'bold' 
   },
   
   dietaryTags: { 
     flexDirection: 'row', 
     flexWrap: 'wrap', 
-    marginTop: 8, 
+    marginTop: 6, 
     gap: 4 
   },
   dietaryTag: {
     backgroundColor: '#FEE2E2',
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
   },
   dietaryTagText: { 
-    fontSize: 10, 
+    fontSize: 9, 
     color: '#E53935', 
     fontWeight: '600' 
   },
   
   recipeDescription: { 
-    fontSize: 14, 
+    fontSize: 13, 
     color: '#64748B', 
-    marginTop: 8, 
-    lineHeight: 20 
+    marginTop: 6, 
+    lineHeight: 18 
   },
   
   nutritionRow: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     backgroundColor: '#F8FAFC',
-    padding: 10,
-    borderRadius: 12,
-    marginTop: 10,
+    padding: 8,
+    borderRadius: 10,
+    marginTop: 8,
     borderWidth: 1,
     borderColor: '#F1F5F9',
   },
@@ -1006,41 +835,21 @@ const styles = StyleSheet.create({
     alignItems: 'center' 
   },
   nutritionValue: { 
-    fontSize: 15, 
+    fontSize: 14, 
     fontWeight: '700', 
     color: '#E53935' 
   },
   nutritionLabel: { 
-    fontSize: 10, 
+    fontSize: 9, 
     color: '#94A3B8', 
-    marginTop: 2 
-  },
-  
-  recommendationBox: {
-    backgroundColor: '#E8F5E9',
-    padding: 12,
-    borderRadius: 10,
-    marginTop: 10,
-    borderLeftWidth: 4,
-    borderLeftColor: '#4CAF50',
-  },
-  recommendationLabel: { 
-    fontSize: 12, 
-    fontWeight: '600', 
-    color: '#2E7D32', 
-    marginBottom: 2 
-  },
-  recommendationText: { 
-    fontSize: 13, 
-    color: '#1E293B', 
-    lineHeight: 18 
+    marginTop: 1 
   },
   
   quickStats: { 
     flexDirection: 'row', 
     alignItems: 'center', 
-    marginTop: 10, 
-    gap: 16 
+    marginTop: 8, 
+    gap: 12 
   },
   quickStat: { 
     flexDirection: 'row', 
@@ -1048,19 +857,19 @@ const styles = StyleSheet.create({
     gap: 4 
   },
   quickStatText: { 
-    fontSize: 12, 
+    fontSize: 11, 
     color: '#94A3B8' 
   },
   
   detailsBtn: {
-    marginTop: 12,
-    paddingVertical: 10,
+    marginTop: 10,
+    paddingVertical: 8,
     alignItems: 'center',
     borderTopWidth: 1,
     borderTopColor: '#F1F5F9',
   },
   detailsBtnText: { 
-    fontSize: 13, 
+    fontSize: 12, 
     fontWeight: '600', 
     color: '#E53935' 
   },
@@ -1083,14 +892,9 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   
-  footerContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#FFFFFF',
-    borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
-  },
   modifySearchBtn: {
+    marginHorizontal: 16,
+    marginVertical: 12,
     borderRadius: 12,
     overflow: 'hidden',
   },
@@ -1098,12 +902,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 14,
+    paddingVertical: 12,
     gap: 8,
   },
   modifySearchBtnText: {
     color: '#FFFFFF',
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '600',
   },
 });
